@@ -22,26 +22,26 @@
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="10"
+            android:layout_weight="12"
             android:background="@android:color/transparent"
             android:onClick="goBack"
-            android:padding="8dp"
+            android:padding="6dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/arrow_back" />
 
         <Space
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="25" />
+            android:layout_weight="26" />
 
         <TextView
-            android:id="@+id/textView2"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="20"
             android:gravity="center|center_horizontal|center_vertical"
             android:text="Sign up"
             android:textColor="#000000"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Space
@@ -77,14 +77,20 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="5"
                 android:backgroundTint="#f0f3f4"
+                android:gravity="clip_horizontal|center|left"
                 android:onClick="uploadPfp"
+                android:paddingStart="30dp"
                 android:text="Upload Profile Picture"
-                android:textColor="#000000" />
+
+                android:textColor="#000000"
+                app:icon="@drawable/image_logo"
+                app:iconPadding="16dp"
+                app:iconTint="@null" />
 
             <Space
                 android:layout_width="match_parent"
@@ -185,14 +191,22 @@
                     android:layout_height="match_parent"
                     android:layout_weight="15" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="70"
                     android:backgroundTint="#f0f3f4"
+                    android:paddingStart="30dp"
                     android:text="Continue with Google"
+
                     android:textColor="#000000"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    app:icon="@drawable/google_logo"
+
+                    app:iconGravity="textStart"
+
+                    app:iconPadding="16dp"
+                    app:iconTint="@null" />
 
                 <Space
                     android:layout_width="0dp"

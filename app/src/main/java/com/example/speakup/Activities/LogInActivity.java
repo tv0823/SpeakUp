@@ -45,7 +45,7 @@ public class LogInActivity extends Utilities {
         checkBox = findViewById(R.id.checkBox);
     }
 
-    public void goToSignInActivity(View view) {
+    public void goToSignUpActivity(View view) {
         Intent intent = new Intent(this, SignUpActivity.class);
         startActivity(intent);
     }
@@ -76,6 +76,9 @@ public class LogInActivity extends Utilities {
                             if (task.isSuccessful()) {
                                 Log.i("LogInActivity", "signInWithEmailAndPassword:success");
                                 FirebaseUser user = refAuth.getCurrentUser();
+
+                                Intent intent = new Intent(LogInActivity.this, QuickAccessActivity.class);
+                                startActivity(intent);
 
                                 try {
                                     FileOutputStream fOS = openFileOutput(INTERNAL_FILENAME, MODE_PRIVATE);

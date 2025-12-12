@@ -22,26 +22,26 @@
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="10"
+            android:layout_weight="12"
             android:background="@android:color/transparent"
             android:onClick="goBack"
-            android:padding="8dp"
+            android:padding="6dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/arrow_back" />
 
         <Space
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="25" />
+            android:layout_weight="26" />
 
         <TextView
-            android:id="@+id/textView2"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="20"
             android:gravity="center|center_horizontal|center_vertical"
             android:text="Log In"
             android:textColor="#000000"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Space
@@ -105,7 +105,7 @@
                 android:textColorHint="#617C89"
                 android:ems="10"
                 android:hint="Password"
-                android:inputType="text"
+                android:inputType="textPassword"
                 android:textSize="14sp"
                 android:paddingStart="16dp"
                 android:paddingLeft="16dp" />
@@ -159,14 +159,23 @@
                     android:layout_height="match_parent"
                     android:layout_weight="15" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="70"
                     android:backgroundTint="#f0f3f4"
                     android:text="Continue with Google"
                     android:textColor="#000000"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+
+                    app:icon="@drawable/google_logo"
+                    app:iconGravity="textStart"
+                    app:iconPadding="16dp"
+
+                    app:iconTint="@null"
+
+                    android:paddingStart="30dp"
+                    />
 
                 <Space
                     android:layout_width="0dp"
@@ -207,7 +216,7 @@
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:onClick="goToSignInActivity"
+            android:onClick="goToSignUpActivity"
             android:text="@string/sign_in_text_html"
             android:textColor="#617C89" />
 
