@@ -3,18 +3,17 @@ package com.example.speakup.Activities;
 import static com.example.speakup.FBRef.refAuth;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.activity.EdgeToEdge;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
-import com.google.firebase.auth.FirebaseUser;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class MainActivity extends Utilities {
 
@@ -22,30 +21,23 @@ public class MainActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        EdgeToEdge.enable(this);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        File file = new File(getFilesDir(), INTERNAL_FILENAME);
-        if(file.exists() && refAuth.getCurrentUser() != null){
-            try {
-                FileInputStream fiS = openFileInput(INTERNAL_FILENAME);
-                InputStreamReader iSR = new InputStreamReader(fiS);
-                BufferedReader bR = new BufferedReader(iSR);
-                String logInStatus = bR.readLine();
-                bR.close();
-                iSR.close();
-                fiS.close();
-                if (logInStatus.equals("true")) {
-                    Intent intent = new Intent(this, QuickAccessActivity.class);
-                    startActivity(intent);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
+        Boolean isChecked = settings.getBoolean("stayConnected", false);
+        if (refAuth.getCurrentUser() != null && isChecked) {
+            Intent intent = new Intent(this, QuickAccessActivity.class);
+            startActivity(intent);
         }
-
     }
 
     public void goToSignUpActivity(View view) {

@@ -1,7 +1,6 @@
 package com.example.speakup.Activities;
 
 import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refST;
 import static com.example.speakup.FBRef.refUserProfiles;
 import static com.example.speakup.FBRef.refUsers;
 
@@ -17,11 +16,15 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.example.speakup.Objects.User;
 import com.example.speakup.R;
@@ -43,7 +46,6 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
 
 public class SignUpActivity extends Utilities {
     private EditText eTUsername, eTEmail, eTPass;
@@ -59,6 +61,12 @@ public class SignUpActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
+        EdgeToEdge.enable(this);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         eTUsername = findViewById(R.id.eTUsername);
         eTEmail = findViewById(R.id.eTEmail);

@@ -17,7 +17,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpeakUp">
         <activity
-            android:name=".Activities.PastRecordingActivity"
+            android:name=".Activities.RemindersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Activities.SimulationsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Activities.PracticeQuestionsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Activities.PastRecordingsActivity"
             android:exported="false" />
         <activity
             android:name=".Activities.QuickAccessActivity"

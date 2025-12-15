@@ -55,7 +55,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="10"
+                android:layout_weight="8"
                 android:gravity="center_vertical"
                 android:text="Quick Access"
                 android:textColor="#000000"
@@ -65,7 +65,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="15"
+                android:layout_weight="10"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
@@ -74,17 +74,18 @@
                     android:layout_weight="45"
                     android:backgroundTint="#00FFFFFF"
                     android:gravity="left|center_vertical"
+                    android:onClick="goToPracticeQuestionsActivity"
                     android:paddingStart="30dp"
-                    android:text="Practive \nQuestions"
 
+                    android:text="Practive \nQuestions"
                     android:textColor="#000000"
                     android:textStyle="bold"
+
                     app:cornerRadius="15dp"
-
-                    app:icon="@drawable/google_logo"
-
+                    app:icon="@drawable/practice_questions_logo"
                     app:iconGravity="textStart"
-                    app:iconPadding="16dp"
+                    app:iconPadding="10dp"
+                    app:iconSize="22dp"
                     app:iconTint="@null"
                     app:strokeColor="#dee4e8"
                     app:strokeWidth="2dp" />
@@ -100,17 +101,18 @@
                     android:layout_weight="45"
                     android:backgroundTint="#00FFFFFF"
                     android:gravity="left|center_vertical"
+                    android:onClick="goToSimulationsActivity"
                     android:paddingStart="30dp"
-                    android:text="Simulations"
 
+                    android:text="Simulations"
                     android:textColor="#000000"
                     android:textStyle="bold"
+
                     app:cornerRadius="15dp"
-
-                    app:icon="@drawable/google_logo"
-
+                    app:icon="@drawable/simulations_logo"
                     app:iconGravity="textStart"
-                    app:iconPadding="16dp"
+                    app:iconPadding="10dp"
+                    app:iconSize="22dp"
                     app:iconTint="@null"
                     app:strokeColor="#dee4e8"
                     app:strokeWidth="2dp" />
@@ -120,7 +122,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="15"
+                android:layout_weight="10"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
@@ -129,6 +131,7 @@
                     android:layout_weight="45"
                     android:backgroundTint="#00FFFFFF"
                     android:gravity="left|center_vertical"
+                    android:onClick="goToPastRecordingsActivity"
                     android:paddingStart="30dp"
 
                     android:text="Past \nRecordings"
@@ -136,10 +139,10 @@
                     android:textStyle="bold"
 
                     app:cornerRadius="15dp"
-
-                    app:icon="@drawable/google_logo"
+                    app:icon="@drawable/past_recordings_logo"
                     app:iconGravity="textStart"
-                    app:iconPadding="16dp"
+                    app:iconPadding="10dp"
+                    app:iconSize="22dp"
                     app:iconTint="@null"
                     app:strokeColor="#dee4e8"
                     app:strokeWidth="2dp" />
@@ -155,17 +158,18 @@
                     android:layout_weight="45"
                     android:backgroundTint="#00FFFFFF"
                     android:gravity="left|center_vertical"
+                    android:onClick="goToRemindersActivity"
                     android:paddingStart="30dp"
-                    android:text="Reminders"
 
+                    android:text="Reminders"
                     android:textColor="#000000"
                     android:textStyle="bold"
+
                     app:cornerRadius="15dp"
-
-                    app:icon="@drawable/google_logo"
-
+                    app:icon="@drawable/reminders_logo"
                     app:iconGravity="textStart"
-                    app:iconPadding="16dp"
+                    app:iconPadding="10dp"
+                    app:iconSize="22dp"
                     app:iconTint="@null"
                     app:strokeColor="#dee4e8"
                     app:strokeWidth="2dp" />
@@ -180,7 +184,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="55"
+                android:layout_weight="65"
+                android:background="@drawable/layout_border"
                 android:orientation="horizontal">
 
                 <Space
@@ -202,7 +207,8 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_weight="5"
+                        android:layout_weight="8"
+                        android:gravity="center_vertical"
                         android:text="Grade Progress"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -210,12 +216,13 @@
                     <Space
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_weight="3" />
+                        android:layout_weight="2" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_weight="10"
+                        android:layout_weight="11"
+                        android:gravity="center_vertical"
                         android:text="%"
                         android:textSize="34sp"
                         android:textStyle="bold" />
@@ -223,12 +230,13 @@
                     <Space
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_weight="3" />
+                        android:layout_weight="2" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_weight="5"
+                        android:layout_weight="6"
+                        android:gravity="center_vertical"
                         android:text="Last 30 Days"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -267,5 +275,5 @@
     <Space
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="2" />
 </LinearLayout>

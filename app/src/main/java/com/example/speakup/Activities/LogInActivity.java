@@ -4,6 +4,7 @@ import static com.example.speakup.FBRef.refAuth;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,7 +12,11 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
@@ -25,12 +30,6 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-
 public class LogInActivity extends Utilities {
     EditText eTEmail, eTPass;
     CheckBox checkBox;
@@ -39,6 +38,13 @@ public class LogInActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_log_in);
+        EdgeToEdge.enable(this);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
 
         eTEmail = findViewById(R.id.eTEmail);
         eTPass = findViewById(R.id.eTPass);
@@ -80,17 +86,10 @@ public class LogInActivity extends Utilities {
                                 Intent intent = new Intent(LogInActivity.this, QuickAccessActivity.class);
                                 startActivity(intent);
 
-                                try {
-                                    FileOutputStream fOS = openFileOutput(INTERNAL_FILENAME, MODE_PRIVATE);
-                                    OutputStreamWriter oSW = new OutputStreamWriter(fOS);
-                                    BufferedWriter bW = new BufferedWriter(oSW);
-                                    bW.write(checkBox.isChecked() + "\n");
-                                    bW.close();
-                                    oSW.close();
-                                    fOS.close();
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
+                                SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = settings.edit();
+                                editor.putBoolean("stayConnected", checkBox.isChecked());
+                                editor.commit();
 
                                 Toast.makeText(LogInActivity.this, "User logged in successfully", Toast.LENGTH_SHORT).show();
                             } else {
