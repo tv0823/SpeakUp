@@ -5,9 +5,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.example.speakup.Fragments.PersonalQuestionsFragment;
-import com.example.speakup.Fragments.ProjectQuestionsFragment;
-import com.example.speakup.Fragments.VideoClipQuestionsFragment;
+import com.example.speakup.Fragments.QuestionsGeneralFragment;
 
 public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
 
@@ -20,13 +18,13 @@ public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
     public Fragment createFragment(int position) {
         switch (position) {
             case 0:
-                return new PersonalQuestionsFragment();
+                return QuestionsGeneralFragment.newInstance("Personal Questions");
             case 1:
-                return new ProjectQuestionsFragment();
+                return QuestionsGeneralFragment.newInstance("Project Questions");
             case 2:
-                return new VideoClipQuestionsFragment();
+                return QuestionsGeneralFragment.newInstance("Video Clip Questions");
             default:
-                return new PersonalQuestionsFragment();
+                return QuestionsGeneralFragment.newInstance("Personal Questions");
         }
     }
 

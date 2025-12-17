@@ -5,6 +5,7 @@ import static com.example.speakup.FBRef.refQuestions;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,15 +24,32 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 
-public class ProjectQuestionsFragment extends Fragment {
+public class QuestionsGeneralFragment extends Fragment {
 
     private LinearLayout columnLeft, columnRight;
+    private String categoryPath;
 
-    public ProjectQuestionsFragment() {}
+    public QuestionsGeneralFragment() {}
+
+    public static QuestionsGeneralFragment newInstance(String category) {
+        QuestionsGeneralFragment fragment = new QuestionsGeneralFragment();
+        Bundle args = new Bundle();
+        args.putString("ARG_CATEGORY", category);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            categoryPath = getArguments().getString("ARG_CATEGORY");
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_project_questions, container, false);
+        View view = inflater.inflate(R.layout.fragment_questions_general, container, false);
 
         columnLeft = view.findViewById(R.id.columnLeft);
         columnRight = view.findViewById(R.id.columnRight);
@@ -41,7 +59,9 @@ public class ProjectQuestionsFragment extends Fragment {
     }
 
     private void fetchTopicsFromFirebase() {
-        refQuestions.child("Project Questions").addListenerForSingleValueEvent(new ValueEventListener() {
+        if (categoryPath == null) return;
+
+        refQuestions.child(categoryPath).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dS) {
                 if (!dS.exists() || !dS.hasChildren()) {
@@ -80,7 +100,6 @@ public class ProjectQuestionsFragment extends Fragment {
         ImageView imageView = cardView.findViewById(R.id.topicImageView);
 
         textView.setText(questionTopic);
-
         loadTopicImage(imageView, questionId);
 
         cardView.setOnClickListener(v -> {
@@ -97,23 +116,22 @@ public class ProjectQuestionsFragment extends Fragment {
         StorageReference refFile = refQuestionMedia.child(fileName);
 
         refFile.getDownloadUrl().addOnSuccessListener(uri -> {
-            Log.d("GlideDebug", "URL found: " + uri.toString());
-
-            Glide.with(this)
-                    .load(uri)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .error(R.drawable.error_image)
-                    .into(imageView);
-
+            if (getContext() != null && isAdded()) {
+                Glide.with(this)
+                        .load(uri)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .error(R.drawable.error_image)
+                        .centerCrop()
+                        .into(imageView);
+            }
         }).addOnFailureListener(e -> {
-            Log.e("GlideDebug", "Firebase rejected request: " + e.getMessage());
             imageView.setImageResource(R.drawable.error_image);
         });
     }
 
     private void handleEmptyState() {
         if (isVisible()) {
-            Toast.makeText(getContext(), "No available questions for now", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "No available questions for " + categoryPath, Toast.LENGTH_LONG).show();
         }
     }
 }
