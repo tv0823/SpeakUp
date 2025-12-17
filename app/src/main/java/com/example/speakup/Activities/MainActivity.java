@@ -7,10 +7,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.activity.EdgeToEdge;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
@@ -21,12 +17,6 @@ public class MainActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        EdgeToEdge.enable(this);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
     }
 
     @Override
@@ -37,6 +27,7 @@ public class MainActivity extends Utilities {
         if (refAuth.getCurrentUser() != null && isChecked) {
             Intent intent = new Intent(this, QuickAccessActivity.class);
             startActivity(intent);
+            finish();
         }
     }
 

@@ -2,15 +2,15 @@ package com.example.speakup.Activities;
 
 import android.os.Bundle;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.speakup.R;
+import com.example.speakup.Utilities;
 
-public class RemindersActivity extends AppCompatActivity {
+public class subTopicActivity extends Utilities {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_reminders);
+        setContentView(R.layout.activity_sub_topic);
+
     }
 }

@@ -17,6 +17,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpeakUp">
         <activity
+            android:name=".Activities.subTopicActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activities.RemindersActivity"
             android:exported="false" />
         <activity

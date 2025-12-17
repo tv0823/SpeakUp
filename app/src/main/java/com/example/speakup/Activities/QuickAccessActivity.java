@@ -7,13 +7,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.speakup.Objects.Question;
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
 import com.github.mikephil.charting.charts.LineChart;
@@ -33,12 +28,7 @@ public class QuickAccessActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quick_access);
-        EdgeToEdge.enable(this);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
 
 //        Question question = new Question("Personal Questions", "About Yourself", "About Yourself", "fullQuestion", "briefQuestion", "videoUrl");
 //        String questionId = refQuestions.child(question.getCategory()).child(question.getTopic()).child("tempId").push().getKey();
@@ -49,14 +39,6 @@ public class QuickAccessActivity extends Utilities {
         setupChartData(); // create the graph
         configureChartAppearance(); // set description and X,Y axis
         lineChart.invalidate(); // reload graph and show it
-
-        //disable the back button so the user cant go to log in screen after registering
-        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
     public void goToPracticeQuestionsActivity(View view) {
