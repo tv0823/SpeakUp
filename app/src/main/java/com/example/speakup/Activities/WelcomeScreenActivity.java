@@ -11,12 +11,12 @@ import android.view.View;
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
 
-public class MainActivity extends Utilities {
+public class WelcomeScreenActivity extends Utilities {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.welcome_screen);
     }
 
     @Override

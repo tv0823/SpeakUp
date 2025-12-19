@@ -3,6 +3,7 @@ package com.example.speakup.Fragments;
 import static com.example.speakup.FBRef.refQuestionMedia;
 import static com.example.speakup.FBRef.refQuestions;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.example.speakup.Activities.PracticeQuestionActivity;
 import com.example.speakup.R;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -103,9 +105,11 @@ public class QuestionsGeneralFragment extends Fragment {
         loadTopicImage(imageView, questionId);
 
         cardView.setOnClickListener(v -> {
-            if (isVisible()) {
-                Toast.makeText(getContext(), "You chose: " + questionTopic, Toast.LENGTH_SHORT).show();
-            }
+            Intent si = new Intent(getContext(), PracticeQuestionActivity.class);
+            si.putExtra("categoryPath", categoryPath);
+            si.putExtra("questionTopic", questionTopic);
+            si.putExtra("questionId", questionId);
+            startActivity(si);
         });
 
         container.addView(cardView);

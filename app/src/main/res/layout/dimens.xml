@@ -1,8 +1,0 @@
-<resources>
-    <dimen name="column_padding">8dp</dimen>
-    <dimen name="button_margin_bottom">12dp</dimen>
-    <dimen name="button_padding_start_30dp">30dp</dimen>
-
-    <dimen name="icon_size_large">22dp</dimen>
-    <dimen name="icon_text_padding">16dp</dimen>
-</resources>

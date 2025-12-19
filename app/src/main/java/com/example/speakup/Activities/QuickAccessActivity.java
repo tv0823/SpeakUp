@@ -1,7 +1,5 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refQuestions;
-
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -29,20 +27,22 @@ public class QuickAccessActivity extends Utilities {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quick_access);
 
-
-//        Question question = new Question("Personal Questions", "About Yourself", "About Yourself", "fullQuestion", "briefQuestion", "videoUrl");
-//        String questionId = refQuestions.child(question.getCategory()).child(question.getTopic()).child("tempId").push().getKey();
-//        question.setQuestionId(questionId);
-//        refQuestions.child(question.getCategory()).child(question.getTopic()).child(questionId).setValue(question);
-
         lineChart = findViewById(R.id.lineChart);
         setupChartData(); // create the graph
         configureChartAppearance(); // set description and X,Y axis
         lineChart.invalidate(); // reload graph and show it
+
+        //disable the back button so the user cant go to log in screen after registering
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
     public void goToPracticeQuestionsActivity(View view) {
-        Intent intent = new Intent(this, PracticeQuestionsActivity.class);
+        Intent intent = new Intent(this, PracticeTopicsActivity.class);
         startActivity(intent);
     }
 

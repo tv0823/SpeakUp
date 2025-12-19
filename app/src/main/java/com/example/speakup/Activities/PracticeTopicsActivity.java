@@ -11,12 +11,12 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import com.example.speakup.PracticeQuestionsPagerAdapter;
 import com.example.speakup.R;
 
-public class PracticeQuestionsActivity extends Utilities {
+public class PracticeTopicsActivity extends Utilities {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_practice_questions);
+        setContentView(R.layout.activity_practice_topics);
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         ViewPager2 viewPager = findViewById(R.id.viewPager);

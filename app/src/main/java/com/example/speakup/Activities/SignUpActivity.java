@@ -154,30 +154,22 @@ public class SignUpActivity extends Utilities {
             fileName = "profile.jpg";
             StorageReference refFile = refUserProfiles.child(refAuth.getUid().toString() + "/" + fileName);
 
-            ProgressDialog pD = new ProgressDialog(this);
-            pD.setTitle("Uploading...");
-            pD.show();
-
             refFile.putFile(imageUri)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                         @Override
                         public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                            pD.dismiss();
                             Toast.makeText(SignUpActivity.this, "Upload successful", Toast.LENGTH_LONG).show();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            pD.dismiss();
                             Toast.makeText(SignUpActivity.this, "Upload Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     })
                     .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
                         @Override
                         public void onProgress(@NonNull UploadTask.TaskSnapshot snapshot) {
-                            double progress = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
-                            pD.setMessage("Uploaded " + (int) progress + " %");
                         }
                     });
         } else {

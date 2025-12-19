@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpeakUp">
         <activity
-            android:name=".Activities.subTopicActivity"
+            android:name=".Activities.PracticeQuestionActivity"
             android:exported="false" />
         <activity
             android:name=".Activities.RemindersActivity"
@@ -26,7 +26,7 @@
             android:name=".Activities.SimulationsActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.PracticeQuestionsActivity"
+            android:name=".Activities.PracticeTopicsActivity"
             android:exported="false" />
         <activity
             android:name=".Activities.PastRecordingsActivity"
@@ -41,7 +41,7 @@
             android:name=".Activities.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.MainActivity"
+            android:name=".Activities.WelcomeScreenActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
