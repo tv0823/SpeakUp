@@ -16,15 +16,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.speakup.Objects.User;
 import com.example.speakup.R;
@@ -47,16 +43,64 @@ import com.google.firebase.storage.UploadTask;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Activity for registering a new user.
+ * <p>
+ * This activity allows new users to create an account by providing a username, email, and password.
+ * Users can also upload a profile picture using the camera or gallery.
+ * The activity handles user creation in Firebase Authentication, storing user details in the Realtime Database,
+ * and uploading the profile picture to Firebase Storage.
+ * </p>
+ */
 public class SignUpActivity extends Utilities {
-    private EditText eTUsername, eTEmail, eTPass;
+    /**
+     * Input field for the username.
+     */
+    private EditText eTUsername;
 
+    /**
+     * Input field for the email address.
+     */
+    private EditText eTEmail;
+
+    /**
+     * Input field for the password.
+     */
+    private EditText eTPass;
+
+    /**
+     * Request code for camera permission.
+     */
     private static final int REQUEST_CAMERA_PERMISSION = 6709;
+
+    /**
+     * Request code for image chooser (camera or gallery).
+     */
     private static final int REQUEST_IMAGE_CHOOSER = 9051;
 
+    /**
+     * URI of the image captured by the camera.
+     */
     private Uri imageUri;
+
+    /**
+     * URI of the image to be uploaded (either from camera or gallery).
+     */
     private Uri imageUriToUpload;
+
+    /**
+     * Name of the file to be uploaded.
+     */
     private String fileName;
 
+    /**
+     * Called when the activity is starting.
+     * Initializes the UI components.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,15 +111,29 @@ public class SignUpActivity extends Utilities {
         eTPass = findViewById(R.id.eTPass);
     }
 
+    /**
+     * Navigates to the LogInActivity for existing users.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToLogInActivity(View view) {
         Intent intent = new Intent(this, LogInActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Finishes the current activity and returns to the previous screen.
+     *
+     * @param view The view that was clicked.
+     */
     public void goBack(View view) {
         finish();
     }
 
+    /**
+     * Called when the activity will start interacting with the user.
+     * Checks for camera permissions and requests them if not granted.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -84,6 +142,16 @@ public class SignUpActivity extends Utilities {
         }
     }
 
+    /**
+     * Callback for the result from requesting permissions.
+     * Handles the response to the camera permission request.
+     *
+     * @param requestCode The request code passed in {@link #requestPermissions(String[], int)}.
+     * @param permissions The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
+     *     or {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -94,6 +162,12 @@ public class SignUpActivity extends Utilities {
         }
     }
 
+    /**
+     * Initiates the process to upload a profile picture.
+     * Opens a chooser dialog to allow the user to select an image from the gallery or take a new photo with the camera.
+     *
+     * @param view The view that was clicked.
+     */
     public void uploadPfp(View view) {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         File photoFile = null;
@@ -128,6 +202,15 @@ public class SignUpActivity extends Utilities {
         startActivityForResult(chooserIntent, REQUEST_IMAGE_CHOOSER);
     }
 
+    /**
+     * Called when an activity you launched exits, giving you the requestCode you started it with,
+     * the resultCode it returned, and any additional data from it.
+     * Handles the result from the image chooser (camera or gallery selection).
+     *
+     * @param requestCode The integer request code originally supplied to startActivityForResult(), allowing you to identify who this result came from.
+     * @param resultCode The integer result code returned by the child activity through its setResult().
+     * @param data_back An Intent, which can return result data to the caller (various data can be attached to Intent "extras").
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode,@Nullable Intent data_back) {
         super.onActivityResult(requestCode, resultCode, data_back);
@@ -149,6 +232,11 @@ public class SignUpActivity extends Utilities {
         }
     }
 
+    /**
+     * Uploads the selected profile picture to Firebase Storage.
+     *
+     * @param imageUri The URI of the image to upload.
+     */
     private void uploadImage(Uri imageUri) {
         if (imageUri != null) {
             fileName = "profile.jpg";
@@ -177,6 +265,17 @@ public class SignUpActivity extends Utilities {
         }
     }
 
+    /**
+     * Attempts to create a new user account with the provided details.
+     * <p>
+     * Validates input fields and ensures a profile picture is selected.
+     * Uses Firebase Authentication to create the user.
+     * On success, creates a user profile in the Realtime Database and uploads the profile picture.
+     * On failure, displays specific error messages based on the exception.
+     * </p>
+     *
+     * @param view The view that was clicked.
+     */
     public void createUser(View view) {
         String email = eTEmail.getText().toString();
         String pass = eTPass.getText().toString();

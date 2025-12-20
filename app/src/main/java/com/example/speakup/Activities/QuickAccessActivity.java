@@ -19,9 +19,29 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 
+/**
+ * Activity providing quick access to the main features of the application.
+ * <p>
+ * This activity serves as a dashboard, displaying a performance chart (currently using sample data)
+ * and providing navigation buttons to different sections of the app such as Practice Questions,
+ * Simulations, Past Recordings, and Reminders.
+ * </p>
+ */
 public class QuickAccessActivity extends Utilities {
+    /**
+     * The line chart view used to display performance data.
+     */
     private LineChart lineChart;
 
+    /**
+     * Called when the activity is starting.
+     * Initializes the UI, sets up the chart data and appearance, and disables the system back button
+     * to prevent returning to the login screen.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,34 +53,57 @@ public class QuickAccessActivity extends Utilities {
         lineChart.invalidate(); // reload graph and show it
 
         //disable the back button so the user cant go to log in screen after registering
-        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
             }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
+        });
     }
 
+    /**
+     * Navigates to the PracticeTopicsActivity.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToPracticeQuestionsActivity(View view) {
         Intent intent = new Intent(this, PracticeTopicsActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Navigates to the SimulationsActivity.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToSimulationsActivity(View view) {
         Intent intent = new Intent(this, SimulationsActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Navigates to the PastRecordingsActivity.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToPastRecordingsActivity(View view) {
         Intent intent = new Intent(this, PastRecordingsActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Navigates to the RemindersActivity.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToRemindersActivity(View view) {
         Intent intent = new Intent(this, RemindersActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Configures the data for the line chart with sample points.
+     * Sets up the data set with styling (colors, line width, etc.).
+     */
     private void setupChartData() {
         ArrayList<Entry> points = new ArrayList<>();
 
@@ -87,6 +130,10 @@ public class QuickAccessActivity extends Utilities {
         lineChart.setData(lineData);
     }
 
+    /**
+     * Configures the visual appearance of the chart.
+     * Sets the description, legend, axis properties (position, granularity, range), and interaction settings.
+     */
     private void configureChartAppearance() {
         // Description for the graph
         Description description = new Description();

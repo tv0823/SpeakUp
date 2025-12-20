@@ -77,7 +77,7 @@
                     android:onClick="goToPracticeQuestionsActivity"
                     android:paddingStart="30dp"
 
-                    android:text="Practive \nQuestions"
+                    android:text="Practice \nQuestions"
                     android:textColor="#000000"
                     android:textStyle="bold"
 

@@ -7,12 +7,39 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.speakup.Fragments.QuestionsGeneralFragment;
 
+/**
+ * Adapter for managing the fragments in the practice questions ViewPager.
+ * <p>
+ * This adapter is responsible for creating and supplying the appropriate {@link Fragment}
+ * for each tab in the {@link com.example.speakup.Activities.PracticeTopicsActivity}.
+ * It handles navigation between different question categories: Personal, Project, and Video Clip questions.
+ * </p>
+ */
 public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
 
+    /**
+     * Constructs a new PracticeQuestionsPagerAdapter.
+     *
+     * @param fragmentActivity The {@link FragmentActivity} that hosts the ViewPager2.
+     */
     public PracticeQuestionsPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
     }
 
+    /**
+     * Creates the fragment corresponding to the specified position.
+     * <p>
+     * Maps the tab position to a specific question category:
+     * <ul>
+     *     <li>0: Personal Questions</li>
+     *     <li>1: Project Questions</li>
+     *     <li>2: Video Clip Questions</li>
+     * </ul>
+     * </p>
+     *
+     * @param position The position of the tab/page to create.
+     * @return A new instance of {@link QuestionsGeneralFragment} configured for the specific category.
+     */
     @NonNull
     @Override
     public Fragment createFragment(int position) {
@@ -28,6 +55,11 @@ public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
         }
     }
 
+    /**
+     * Returns the total number of items in the adapter.
+     *
+     * @return The number of tabs/pages (3).
+     */
     @Override
     public int getItemCount() {
         return 3;

@@ -26,10 +26,37 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 
+/**
+ * Activity handling the user login process.
+ * <p>
+ * This activity provides a user interface for existing users to log in using their email and password.
+ * It interacts with Firebase Authentication to verify credentials and manages user session preferences.
+ * </p>
+ */
 public class LogInActivity extends Utilities {
-    EditText eTEmail, eTPass;
+    /**
+     * Input field for the user's email address.
+     */
+    EditText eTEmail;
+
+    /**
+     * Input field for the user's password.
+     */
+    EditText eTPass;
+
+    /**
+     * CheckBox to remember the user's login status.
+     */
     CheckBox checkBox;
 
+    /**
+     * Called when the activity is starting.
+     * Initializes the UI components.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,15 +67,36 @@ public class LogInActivity extends Utilities {
         checkBox = findViewById(R.id.checkBox);
     }
 
+    /**
+     * Navigates to the SignUpActivity for new users to register.
+     *
+     * @param view The view that was clicked.
+     */
     public void goToSignUpActivity(View view) {
         Intent intent = new Intent(this, SignUpActivity.class);
         startActivity(intent);
     }
 
+    /**
+     * Finishes the current activity and returns to the previous screen.
+     *
+     * @param view The view that was clicked.
+     */
     public void goBack(View view) {
         finish();
     }
 
+    /**
+     * Attempts to log in the user using the provided credentials.
+     * <p>
+     * Validates that email and password fields are not empty.
+     * Shows a progress dialog during the authentication process.
+     * On success, navigates to {@link QuickAccessActivity} and saves the login status if "Remember me" is checked.
+     * On failure, displays a specific error message based on the exception type.
+     * </p>
+     *
+     * @param view The view that was clicked.
+     */
     public void logIn(View view) {
         String email = eTEmail.getText().toString();
         String pass = eTPass.getText().toString();

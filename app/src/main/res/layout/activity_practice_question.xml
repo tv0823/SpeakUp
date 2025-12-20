@@ -36,7 +36,7 @@
             android:layout_weight="15" />
 
         <TextView
-            android:id="@+id/topicTitleTv"
+            android:id="@+id/subTopicTitleTv"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="42"
