@@ -16,20 +16,84 @@ import com.example.speakup.Utilities;
 
 import java.util.Locale;
 
+/**
+ * Activity for practicing a specific question.
+ * <p>
+ * This activity displays a question's details, including its sub-topic or topic and key points.
+ * It allows the user to listen to the question text using Text-To-Speech (TTS).
+ * It includes a playback control with play/pause functionality, a seek bar, and a timer display.
+ * The Question object is received via Intent.
+ * </p>
+ */
 public class PracticeQuestionActivity extends Utilities {
-    private TextView subTopicTitleTv, keyPointsTv, currentTimeTv, totalTimeTv;
+    /**
+     * TextView displaying the sub-topic or topic title.
+     */
+    private TextView subTopicTitleTv;
+    
+    /**
+     * TextView displaying the key points or brief version of the question.
+     */
+    private TextView keyPointsTv;
+    
+    /**
+     * TextView displaying the current playback time.
+     */
+    private TextView currentTimeTv;
+    
+    /**
+     * TextView displaying the total duration of the question text.
+     */
+    private TextView totalTimeTv;
+    
+    /**
+     * SeekBar for controlling playback progress.
+     */
     private SeekBar ttsSeekBar;
+    
+    /**
+     * Button to toggle play/pause state.
+     */
     private ImageButton playPauseBtn;
+
+    /**
+     * Handler for managing the playback timer updates.
+     */
     private Handler timerHandler;
 
+    /**
+     * Current progress of the playback in 100ms steps.
+     */
     private int currentProgress = 0;
+
+    /**
+     * Total estimated duration of the question text in seconds.
+     */
     private int totalSeconds = 0;
+
+    /**
+     * Maximum progress value for the seek bar (totalSeconds * 10).
+     */
     private int maxProgress = 0;
+
+    /**
+     * Interval in milliseconds for updating the timer and seek bar (0.1 seconds).
+     */
     private static final int TICK_INTERVAL = 100;
 
+    /**
+     * The question object being practiced.
+     */
     private Question question;
+
+    /**
+     * Helper for Text-To-Speech functionality.
+     */
     private TtsHelper tts;
 
+    /**
+     * Runnable that updates the clock and SeekBar smoothly during playback.
+     */
     private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -51,6 +115,14 @@ public class PracticeQuestionActivity extends Utilities {
         }
     };
 
+    /**
+     * Called when the activity is starting.
+     * Initializes the UI, TTS helper, and retrieves the Question object from the Intent.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,8 +156,11 @@ public class PracticeQuestionActivity extends Utilities {
     }
 
     /**
-     * Replaces the old Firebase fetch logic.
-     * Sets the text and calculates the TTS duration.
+     * Populates the UI with data from the {@link Question} object.
+     * <p>
+     * Sets the topic/subtopic title and key points text.
+     * Calculates the estimated total duration for TTS based on text length and configures the SeekBar and time labels.
+     * </p>
      */
     private void setupUIWithQuestionData() {
         if (!question.getSubTopic().equals("null")) {
@@ -115,6 +190,9 @@ public class PracticeQuestionActivity extends Utilities {
         playPauseBtn.setClickable(true);
     }
 
+    /**
+     * Sets up the listener for the SeekBar to handle user interaction (seeking).
+     */
     private void setupSeekBarListener() {
         ttsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -143,6 +221,11 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Toggles between playing and pausing the question TTS.
+     *
+     * @param view The view that was clicked.
+     */
     public void playOrPause(View view) {
         if (question != null) {
             if (tts.isSpeaking()) {
@@ -163,6 +246,9 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Updates the text views displaying the current and total playback time.
+     */
     private void updateTimeLabels() {
         int displaySeconds = currentProgress / 10;
         String current = String.format(Locale.getDefault(), "%02d:%02d", displaySeconds / 60, displaySeconds % 60);
@@ -171,6 +257,9 @@ public class PracticeQuestionActivity extends Utilities {
         totalTimeTv.setText(total);
     }
 
+    /**
+     * Handles UI updates when playback finishes successfully.
+     */
     private void handlePlaybackFinished() {
         stopTimer();
         currentProgress = maxProgress;
@@ -179,19 +268,34 @@ public class PracticeQuestionActivity extends Utilities {
         playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
     }
 
+    /**
+     * Starts the timer that updates the progress bar and time labels.
+     */
     private void startTimer() {
         stopTimer();
         timerHandler.postDelayed(timerRunnable, TICK_INTERVAL);
     }
 
+    /**
+     * Stops the playback timer.
+     */
     private void stopTimer() {
         timerHandler.removeCallbacks(timerRunnable);
     }
 
+    /**
+     * Finishes the current activity and returns to the previous screen.
+     *
+     * @param view The view that was clicked.
+     */
     public void goBack(View view) {
         finish();
     }
 
+    /**
+     * Called when the activity is destroyed.
+     * Cleans up the timer and releases TTS resources.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

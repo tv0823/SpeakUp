@@ -66,7 +66,7 @@ public class QuestionsGeneralFragment extends Fragment {
     /**
      * Global list to store all questions retrieved for the current category.
      */
-    private ArrayList<Question> allQuestionsList = new ArrayList<>();
+    private ArrayList<Question> allQuestionsList;
 
     /**
      * Default constructor.
@@ -123,6 +123,8 @@ public class QuestionsGeneralFragment extends Fragment {
         columnRight = view.findViewById(R.id.columnRight);
         spinnerTopics = view.findViewById(R.id.spinnerTopics);
 
+        allQuestionsList = new ArrayList<>();
+
         fetchTopicsFromFirebase();
         return view;
     }
@@ -141,7 +143,9 @@ public class QuestionsGeneralFragment extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot dS) {
                 if (!dS.exists() || !dS.hasChildren()) {
-                    handleEmptyState();
+                    if (isVisible()) {
+                        Toast.makeText(getContext(), "No available questions for " + categoryPath, Toast.LENGTH_LONG).show();
+                    }
                     return;
                 }
 
@@ -287,15 +291,5 @@ public class QuestionsGeneralFragment extends Fragment {
         }).addOnFailureListener(e -> {
             imageView.setImageResource(R.drawable.error_image);
         });
-    }
-
-    /**
-     * Handles the case where no questions are found for the category.
-     * Displays a toast message to the user.
-     */
-    private void handleEmptyState() {
-        if (isVisible()) {
-            Toast.makeText(getContext(), "No available questions for " + categoryPath, Toast.LENGTH_LONG).show();
-        }
     }
 }

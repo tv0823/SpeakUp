@@ -100,7 +100,6 @@ public class LogInActivity extends Utilities {
     public void logIn(View view) {
         String email = eTEmail.getText().toString();
         String pass = eTPass.getText().toString();
-        boolean remember = checkBox.isChecked();
 
         if (email.isEmpty() || pass.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();

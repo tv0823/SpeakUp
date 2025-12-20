@@ -89,11 +89,6 @@ public class SignUpActivity extends Utilities {
     private Uri imageUriToUpload;
 
     /**
-     * Name of the file to be uploaded.
-     */
-    private String fileName;
-
-    /**
      * Called when the activity is starting.
      * Initializes the UI components.
      *
@@ -239,7 +234,7 @@ public class SignUpActivity extends Utilities {
      */
     private void uploadImage(Uri imageUri) {
         if (imageUri != null) {
-            fileName = "profile.jpg";
+            String fileName = "profile.jpg";
             StorageReference refFile = refUserProfiles.child(refAuth.getUid().toString() + "/" + fileName);
 
             refFile.putFile(imageUri)
