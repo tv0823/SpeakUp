@@ -12,6 +12,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.speakup.Activities.MasterActivity;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 public class Utilities extends AppCompatActivity {
 
     private NetworkChangeReceiver networkReceiver;
@@ -34,14 +37,33 @@ public class Utilities extends AppCompatActivity {
 
     private void applyEdgeToEdgeLogic() {
         EdgeToEdge.enable(this);
-        View root = findViewById(android.R.id.content);
-        if (root != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+        View root = findViewById(R.id.main);
+
+        // Safety check for the root view
+        if (root == null) return;
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // CHECK: Is this the MasterActivity?
+            if (this instanceof MasterActivity) {
+                // Logic for MasterActivity (Bottom nav bar bleeds to bottom)
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+
+                BottomNavigationView navBar = findViewById(R.id.bottom_navigation);
+                if (navBar != null) {
+                    // We pad the NavBar specifically so icons stay above the system line
+                    navBar.setPadding(0, 0, 0, systemBars.bottom);
+                }
+            } else {
+                // Logic for all other activities (Standard "Older" padding)
+                // This applies padding to the whole root, preventing a "gap" in the nav bar
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-        }
+            }
+
+            return insets;
+        });
     }
 
     @Override

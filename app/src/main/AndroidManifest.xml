@@ -4,7 +4,6 @@
 
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.CAMERA" />
-
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -18,11 +17,16 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SpeakUp">
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+        <activity
+            android:name=".Activities.MasterActivity"
+            android:exported="false" />
+
         <receiver
             android:name=".NetworkChangeReceiver"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true"
+            tools:ignore="Instantiatable" />
 
         <activity
             android:name=".Activities.PracticeQuestionActivity"
@@ -38,9 +42,6 @@
             android:exported="false" />
         <activity
             android:name=".Activities.PastRecordingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Activities.QuickAccessActivity"
             android:exported="false" />
         <activity
             android:name=".Activities.LogInActivity"

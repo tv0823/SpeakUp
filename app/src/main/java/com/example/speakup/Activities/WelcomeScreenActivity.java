@@ -39,7 +39,7 @@ public class WelcomeScreenActivity extends Utilities {
      * Called when the activity is becoming visible to the user.
      * <p>
      * Checks if a user is currently logged in and if the "stayConnected" preference is enabled.
-     * If both conditions are met, the user is automatically redirected to the {@link QuickAccessActivity},
+     * If both conditions are met, the user is automatically redirected to the {@link MasterActivity},
      * bypassing the login/signup screens.
      * </p>
      */
@@ -49,7 +49,7 @@ public class WelcomeScreenActivity extends Utilities {
         SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
         Boolean isChecked = settings.getBoolean("stayConnected", false);
         if (refAuth.getCurrentUser() != null && isChecked) {
-            Intent intent = new Intent(this, QuickAccessActivity.class);
+            Intent intent = new Intent(this, MasterActivity.class);
             startActivity(intent);
         }
     }

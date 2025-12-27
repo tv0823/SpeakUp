@@ -119,7 +119,7 @@ public class LogInActivity extends Utilities {
                                 Log.i("LogInActivity", "signInWithEmailAndPassword:success");
                                 FirebaseUser user = refAuth.getCurrentUser();
 
-                                Intent intent = new Intent(LogInActivity.this, QuickAccessActivity.class);
+                                Intent intent = new Intent(LogInActivity.this, MasterActivity.class);
                                 startActivity(intent);
 
                                 SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
