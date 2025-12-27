@@ -11,7 +11,7 @@ import com.example.speakup.Fragments.QuestionsGeneralFragment;
  * Adapter for managing the fragments in the practice questions ViewPager.
  * <p>
  * This adapter is responsible for creating and supplying the appropriate {@link Fragment}
- * for each tab in the {@link com.example.speakup.Activities.PracticeTopicsActivity}.
+ * for each tab in the {@link com.example.speakup.Fragments.PracticeTopicsFragment}.
  * It handles navigation between different question categories: Personal, Project, and Video Clip questions.
  * </p>
  */
@@ -20,10 +20,10 @@ public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
     /**
      * Constructs a new PracticeQuestionsPagerAdapter.
      *
-     * @param fragmentActivity The {@link FragmentActivity} that hosts the ViewPager2.
+     * @param fragment The {@link Fragment} that hosts the ViewPager2.
      */
-    public PracticeQuestionsPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
-        super(fragmentActivity);
+    public PracticeQuestionsPagerAdapter(@NonNull Fragment fragment) {
+        super(fragment);
     }
 
     /**

@@ -14,8 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import com.example.speakup.Activities.MasterActivity;
 import com.example.speakup.Activities.PastRecordingsActivity;
-import com.example.speakup.Activities.PracticeTopicsActivity;
 import com.example.speakup.Activities.RemindersActivity;
 import com.example.speakup.Activities.SimulationsActivity;
 import com.example.speakup.R;
@@ -26,6 +26,7 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -77,10 +78,7 @@ public class QuickAccessFragment extends Fragment {
         // Setup navigation buttons
         setupNavigationButtons(view);
 
-        // Disable the back button logic is handled in the host Activity if needed,
-        // but typically Fragments don't control the Activity's onBackPressed unless necessary.
-        // If this Fragment is the "home" fragment, the back button handling usually stays in the Activity
-        // or the Activity delegates it. Assuming the user wants to keep the logic:
+        // Disable the back button logic
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -93,8 +91,16 @@ public class QuickAccessFragment extends Fragment {
         MaterialButton btnPractice = view.findViewById(R.id.btnPracticeQuestions);
         if (btnPractice != null) {
             btnPractice.setOnClickListener(v -> {
-                Intent intent = new Intent(getActivity(), PracticeTopicsActivity.class);
-                startActivity(intent);
+                // 1. Switch the Fragment
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new PracticeTopicsFragment())
+                        .commit();
+
+                // 2. Sync the Bottom Navigation Bar UI
+                if (getActivity() instanceof MasterActivity) {
+                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                    nav.setSelectedItemId(R.id.nav_practice);
+                }
             });
         }
         

@@ -3,6 +3,7 @@ package com.example.speakup.Activities;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import com.example.speakup.Fragments.PracticeTopicsFragment;
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
@@ -32,7 +33,7 @@ public class MasterActivity extends Utilities {
             if (itemId == R.id.nav_home) {
                 selectedFragment = new QuickAccessFragment();
             } else if (itemId == R.id.nav_practice) {
-                Toast.makeText(this, "Practice", Toast.LENGTH_SHORT).show();
+                selectedFragment = new PracticeTopicsFragment();
             } else if (itemId == R.id.nav_simulations) {
                 Toast.makeText(this, "Simulations", Toast.LENGTH_SHORT).show();
             } else if (itemId == R.id.nav_recordings) {

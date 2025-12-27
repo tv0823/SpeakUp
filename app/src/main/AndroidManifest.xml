@@ -38,9 +38,6 @@
             android:name=".Activities.SimulationsActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.PracticeTopicsActivity"
-            android:exported="false" />
-        <activity
             android:name=".Activities.PastRecordingsActivity"
             android:exported="false" />
         <activity
