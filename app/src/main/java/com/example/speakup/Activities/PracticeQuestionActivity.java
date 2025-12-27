@@ -1,19 +1,36 @@
 package com.example.speakup.Activities;
 
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.speakup.Objects.Question;
 import com.example.speakup.R;
 import com.example.speakup.TtsHelper;
 import com.example.speakup.Utilities;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -26,6 +43,8 @@ import java.util.Locale;
  * </p>
  */
 public class PracticeQuestionActivity extends Utilities {
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+
     /**
      * TextView displaying the sub-topic or topic title.
      */
@@ -55,6 +74,10 @@ public class PracticeQuestionActivity extends Utilities {
      * Button to toggle play/pause state.
      */
     private ImageButton playPauseBtn;
+
+    private Button recordBtn;
+
+    private Button relistenBtn;
 
     /**
      * Handler for managing the playback timer updates.
@@ -115,6 +138,10 @@ public class PracticeQuestionActivity extends Utilities {
         }
     };
 
+    private MediaRecorder recorder;
+    private MediaPlayer player;
+    private String fileName;
+
     /**
      * Called when the activity is starting.
      * Initializes the UI, TTS helper, and retrieves the Question object from the Intent.
@@ -135,6 +162,8 @@ public class PracticeQuestionActivity extends Utilities {
         totalTimeTv = findViewById(R.id.totalTimeTv);
         ttsSeekBar = findViewById(R.id.ttsSeekBar);
         playPauseBtn = findViewById(R.id.playPauseBtn);
+        recordBtn = findViewById(R.id.recordBtn);
+        relistenBtn = findViewById(R.id.relistenBtn);
 
         timerHandler = new Handler();
         tts = new TtsHelper(this);
@@ -153,6 +182,49 @@ public class PracticeQuestionActivity extends Utilities {
         }
 
         setupSeekBarListener();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    REQUEST_RECORD_AUDIO_PERMISSION);
+        }
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                AlertDialog.Builder adb = new AlertDialog.Builder(PracticeQuestionActivity.this);
+                adb.setCancelable(false);
+                adb.setTitle("Leave practice");
+                adb.setMessage("Are you sure you want to leave the practice?\nOnce you leave the practice you can't recover the recording.");
+                adb.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int which) {
+                        finish();
+                    }
+                });
+                adb.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                AlertDialog ad = adb.create();
+                ad.show();
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Microphone permission granted.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Microphone permission denied. Cannot record.", Toast.LENGTH_LONG).show();
+                recordBtn.setEnabled(false);
+            }
+        }
     }
 
     /**
@@ -292,6 +364,116 @@ public class PracticeQuestionActivity extends Utilities {
         finish();
     }
 
+    public void recordBtn(View view) {
+        if (recorder == null && fileName != null) {
+            AlertDialog.Builder adb = new AlertDialog.Builder(this);
+            adb.setCancelable(false);
+            adb.setTitle("Delete Recording?");
+            adb.setMessage("Are you sure you want to delete this recording?\nOnce you delete the recording you can't recover it.");
+            adb.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int which) {
+                    startRecording();
+                    recordBtn.setText("Click to stop recording");
+                    recordBtn.setBackgroundColor(Color.parseColor("#d65c54"));
+                }
+            });
+            adb.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            AlertDialog ad = adb.create();
+            ad.show();
+        }
+        else if (recorder == null) {
+            startRecording();
+            recordBtn.setText("Click to stop recording");
+            recordBtn.setBackgroundColor(Color.parseColor("#d65c54"));
+        } else {
+            stopRecording();
+            recordBtn.setText("Record");
+            recordBtn.setBackgroundColor(Color.parseColor("#13A4EC"));
+        }
+    }
+
+    private void startRecording() {
+        fileName = getExternalCacheDir().getAbsolutePath() + "/audiorecord.mp3";
+
+        recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4); // Better container for high quality
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);    // High-quality modern codec
+
+        recorder.setAudioSamplingRate(44100);
+        recorder.setAudioEncodingBitRate(128000); // 128 kbps (Clear voice)
+        recorder.setAudioChannels(1);
+
+        recorder.setOutputFile(fileName);
+
+        try {
+            recorder.prepare();
+            recorder.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopRecording() {
+        recorder.stop();
+        recorder.release();
+        recorder = null;
+    }
+
+    public void reListenToRecording(View view) {
+        if (recorder == null) {
+            if (player == null && fileName != null) {
+                startPlaying();
+                relistenBtn.setText("Stop");
+                relistenBtn.setTextColor(Color.parseColor("#ffffff"));
+                relistenBtn.setBackgroundColor(Color.parseColor("#d65c54"));
+            } else {
+                stopPlaying();
+                relistenBtn.setText("Re-listen");
+                relistenBtn.setTextColor(Color.parseColor("#000000"));
+                relistenBtn.setBackgroundColor(Color.parseColor("#F1F3F4"));
+            }
+        }
+    }
+
+    private void startPlaying() {
+        player = new MediaPlayer();
+        try {
+            player.setDataSource(fileName);
+            player.prepare(); // Buffers the file
+            player.start();   // Begins playback
+            player.setOnCompletionListener(mp -> {
+                relistenBtn.setText("Re-listen");
+                relistenBtn.setTextColor(Color.parseColor("#000000"));
+                relistenBtn.setBackgroundColor(Color.parseColor("#F1F3F4"));
+            });
+        } catch (IOException e) {
+            Log.e("AudioPlay", "prepare() failed");
+        }
+    }
+
+    private void stopPlaying() {
+        player.release();
+        player = null;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (recorder != null) {
+            recorder.release();
+        }
+        if (player != null) {
+            player.release();
+        }
+    }
+
     /**
      * Called when the activity is destroyed.
      * Cleans up the timer and releases TTS resources.
@@ -302,4 +484,5 @@ public class PracticeQuestionActivity extends Utilities {
         stopTimer();
         if (tts != null) tts.destroy();
     }
+
 }

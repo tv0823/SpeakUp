@@ -274,8 +274,9 @@
                     android:id="@+id/recordBtn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_weight="1.5"
                     android:backgroundTint="#13A4EC"
+                    android:onClick="recordBtn"
                     android:text="Record"
                     android:textAllCaps="false" />
 
@@ -287,8 +288,9 @@
                     android:id="@+id/relistenBtn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1.3"
+                    android:layout_weight="1"
                     android:backgroundTint="#F1F3F4"
+                    android:onClick="reListenToRecording"
                     android:text="Re-listen"
                     android:textAllCaps="false"
                     android:textColor="#000000" />
