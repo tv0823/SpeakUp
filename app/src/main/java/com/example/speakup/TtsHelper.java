@@ -2,6 +2,7 @@ package com.example.speakup;
 
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.widget.Toast;
 
 import java.util.Locale;
@@ -20,6 +21,7 @@ public class TtsHelper {
      * The internal TextToSpeech engine instance.
      */
     private TextToSpeech tts;
+    private boolean isInitialized = false;
 
     /**
      * Constructs a new TtsHelper and initializes the TextToSpeech engine.
@@ -38,12 +40,24 @@ public class TtsHelper {
                     Toast.makeText(context, "Language not supported", Toast.LENGTH_SHORT).show();
                 } else {
                     // Set a natural speaking rate
-                    tts.setSpeechRate(0.8f);
+                    tts.setSpeechRate(0.7f);
+                    isInitialized = true;
                 }
             } else {
                 Toast.makeText(context, "TTS initialization failed", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Sets a listener to be notified of TTS events.
+     *
+     * @param listener The UtteranceProgressListener.
+     */
+    public void setUtteranceProgressListener(UtteranceProgressListener listener) {
+        if (tts != null) {
+            tts.setOnUtteranceProgressListener(listener);
+        }
     }
 
     /**
@@ -57,13 +71,13 @@ public class TtsHelper {
      * @param percentage The percentage (0.0 to 1.0) indicating the starting position.
      */
     public void speakFromPercentage(String fullText, float percentage) {
-        if (fullText == null || fullText.isEmpty()) return;
+        if (!isInitialized || fullText == null || fullText.isEmpty()) return;
 
         tts.stop();
 
         // 1. If we are at the very start (percentage is 0), speak the whole text
         if (percentage <= 0.01f) {
-            tts.speak(fullText, TextToSpeech.QUEUE_FLUSH, null, "start_speech");
+            tts.speak(fullText, TextToSpeech.QUEUE_FLUSH, null, "speech_utterance");
             return;
         }
 
@@ -81,7 +95,7 @@ public class TtsHelper {
         }
 
         if (!remainingText.isEmpty()) {
-            tts.speak(remainingText, TextToSpeech.QUEUE_FLUSH, null, "jumped_speech");
+            tts.speak(remainingText, TextToSpeech.QUEUE_FLUSH, null, "speech_utterance");
         }
     }
 

@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -91,7 +92,7 @@ public class LogInActivity extends Utilities {
      * <p>
      * Validates that email and password fields are not empty.
      * Shows a progress dialog during the authentication process.
-     * On success, navigates to {@link QuickAccessActivity} and saves the login status if "Remember me" is checked.
+     * On success, navigates to {@link QuickAccessFragment} and saves the login status if "Remember me" is checked.
      * On failure, displays a specific error message based on the exception type.
      * </p>
      *
@@ -117,8 +118,6 @@ public class LogInActivity extends Utilities {
 
                             if (task.isSuccessful()) {
                                 Log.i("LogInActivity", "signInWithEmailAndPassword:success");
-                                FirebaseUser user = refAuth.getCurrentUser();
-
                                 Intent intent = new Intent(LogInActivity.this, MasterActivity.class);
                                 startActivity(intent);
 
