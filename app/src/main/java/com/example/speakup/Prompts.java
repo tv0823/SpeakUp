@@ -1,7 +1,8 @@
 package com.example.speakup;
 
 public class Prompts {
-// --- SCHEMAS ---
+
+    // --- SCHEMAS ---
 
     // Schema for individual sections (Personal, Project, Video)
     public static final String COMPONENT_SCHEMA =
@@ -12,7 +13,7 @@ public class Prompts {
                     "    \"delivery\": {\"type\": \"integer\", \"description\": \"Score out of 15 based on fluency and pace\"},\n" +
                     "    \"vocabulary\": {\"type\": \"integer\", \"description\": \"Score out of 20 based on variety and chunks\"},\n" +
                     "    \"language\": {\"type\": \"integer\", \"description\": \"Score out of 15 based on grammar and English usage\"},\n" +
-                    "    \"totalSectionScore\": {\"type\": \"integer\"},\n" +
+                    "    \"totalSectionScore\": {\"type\": \"integer\", \"description\": \"Sum of the 4 categories (out of 100)\"},\n" +
                     "    \"feedback\": {\n" +
                     "      \"type\": \"object\",\n" +
                     "      \"properties\": {\n" +
@@ -35,47 +36,64 @@ public class Prompts {
                     "    \"personalResponse\": " + COMPONENT_SCHEMA + ",\n" +
                     "    \"projectPresentation\": " + COMPONENT_SCHEMA + ",\n" +
                     "    \"videoClipResponse\": " + COMPONENT_SCHEMA + ",\n" +
-                    "    \"finalExamGrade\": {\"type\": \"number\"},\n" +
+                    "    \"finalExamGrade\": {\"type\": \"number\"}\n" +
                     "  }\n" +
                     "}";
 
-    // --- PROMPTS ---
+    // --- MEGA PROMPT INSTRUCTIONS ---
 
     private static final String RUBRIC_INSTRUCTIONS =
-            "Use these criteria for grading (0-100 scale converted to 25 points per section):\n" +
-                    "1. Topic Development: 100-76 (Relevant, complete understanding, logical, in-depth), 75-55 (Mostly relevant, lacking detail), 54-26 (Partial relevance/understanding), 25-0 (Irrelevant, no depth).\n" +
-                    "2. Delivery: 100-76 (Comprehensible, easy pace, no hesitations), 75-55 (Some hesitations), 54-26 (Difficult to comprehend, many hesitations), 25-0 (Unintelligible).\n" +
-                    "3. Vocabulary: 100-76 (Varied use of appropriate words/chunks), 75-55 (Mostly correct/varied), 54-26 (Repetitive/inappropriate), 25-0 (Incorrect).\n" +
-                    "4. Language: 100-76 (Correct structures, English only), 75-55 (Mostly correct), 54-26 (Many errors), 25-0 (Incorrect/non-English used).\n" +
-                    "Each of the 4 categories is worth 25% of the recording score.\n";
+            "Grading Scale & Criteria:\n" +
+                    "1. Topic Development (50%): \n" +
+                    "   - 100-76: Relevant, complete understanding, logical, in-depth with detailed examples.\n" +
+                    "   - 75-55: Mostly relevant, lacks some detail or examples.\n" +
+                    "   - 54-26: Partially relevant, partial understanding, lacks development.\n" +
+                    "   - 25-0: Irrelevant, lacks organization, no depth.\n" +
+                    "2. Delivery (15%): \n" +
+                    "   - 100-76: Comprehensible, clear pace/intonation, almost no hesitations.\n" +
+                    "   - 75-55: Mostly comprehensible, some hesitations.\n" +
+                    "   - 54-26: Difficult to comprehend, many hesitations.\n" +
+                    "   - 25-0: Unintelligible, mostly hesitant.\n" +
+                    "3. Vocabulary (20%): \n" +
+                    "   - 100-76: Correct and varied use of appropriate words and chunks.\n" +
+                    "   - 75-55: Mostly correct and varied.\n" +
+                    "   - 54-26: Partial use, some inappropriate repetition.\n" +
+                    "   - 25-0: Incorrect and repetitive.\n" +
+                    "4. Language (15%): \n" +
+                    "   - 100-76: Correct structures, English only (except religious/national holidays).\n" +
+                    "   - 75-55: Mostly correct structures.\n" +
+                    "   - 54-26: Partial use of structures with many errors.\n" +
+                    "   - 25-0: Mostly incorrect, uses languages other than English.\n";
 
     public static final String PERSONAL_PROMPT =
-            "Task: Grade the 12th grade student on the 'Personal Response' section of the COBE exam.\n" +
+            "Task: Grade the 12th grade student on the 'Personal Response' recording of the COBE exam.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
-                    "Provide a specific summary for each category (Language, Vocabulary, Delivery, Topic Development) with what to keep and what to improve.\n" +
+                    "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
+                    "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
     public static final String PROJECT_PROMPT =
-            "Task: Grade the 12th grade student on the 'Project Presentation' section of the COBE exam.\n" +
-                    "Evaluate their ability to explain their research and personal reflection.\n" +
+            "Task: Grade the 12th grade student on the 'Project Presentation' recording of the COBE exam.\n" +
+                    "Ensure the student explains the research process and personal insights.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
-                    "Provide a specific summary for each category (Language, Vocabulary, Delivery, Topic Development) with what to keep and what to improve.\n" +
+                    "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
+                    "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
     public static final String VIDEO_CLIPS_PROMPT =
-            "Task: Grade the student on the 'Video Clip Responses' (Part C) of the COBE exam.\n" +
-                    "Note: Answers must be based accurately on the spoken text in the video.\n" +
+            "Task: Grade the 12th grade student on the 'Video Clip Responses' (Part C) recording.\n" +
+                    "Crucial: Answers MUST be based on the spoken text from the video clip. Deduct Topic Development points if inaccurate.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
-                    "Provide a specific summary for each category (Language, Vocabulary, Delivery, Topic Development) with what to keep and what to improve.\n" +
+                    "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
+                    "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
     public static final String ALL_RECORDINGS_PROMPT =
-            "Task: Aggregate the final COBE grade for the student.\n" +
-                    "Calculation: Personal (25%) + Project (25%) + Video Clips (25% for both answers combined) + Other Recordings (25%).\n" +
-                    "Ensure each sub-recording has its own detailed feedback for Language, Vocabulary, Delivery, and Topic Development.\n" +
-                    "Provide a final summary of the student's overall performance.\n" +
+            "Task: Calculate the final COBE exam grade.\n" +
+                    "Weights: Personal (25%), Project (25%), Video Clip (25%), and Other (25%).\n" +
+                    "Aggregate the data from all sections. Ensure each recording has its own detailed category-by-category feedback.\n" +
                     "Return the result as a JSON object matching this schema:\n" + MAIN_EXAM_SCHEMA;
 }

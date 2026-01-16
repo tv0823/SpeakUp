@@ -37,6 +37,12 @@ public class FBRef {
     public static DatabaseReference refQuestions = FBDB.getReference("Questions");
 
     /**
+     * Reference to the 'Recordings' node in the Realtime Database.
+     * Contains metadata and analysis for user recordings.
+     */
+    public static DatabaseReference refRecordings = FBDB.getReference("Recordings");
+
+    /**
      * The entry point of the Firebase Storage SDK.
      */
     public static FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -57,4 +63,10 @@ public class FBRef {
      * Points to the 'Question_Media/' directory.
      */
     public static StorageReference refQuestionMedia = refST.child("Question_Media/");
+
+    /**
+     * Storage reference for audio files recorded by users.
+     * Points to the 'Recordings/' directory.
+     */
+    public static StorageReference refRecordingsMedia = refST.child("Recordings/");
 }

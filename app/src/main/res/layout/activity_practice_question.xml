@@ -215,9 +215,9 @@
                         android:max="1000"
                         android:paddingStart="0dp"
                         android:paddingEnd="0dp"
+                        android:progressDrawable="@drawable/custom_recording_seekbar"
                         android:splitTrack="false"
-                        android:thumb="@android:color/transparent"
-                        android:progressDrawable="@drawable/custom_recording_seekbar" />
+                        android:thumb="@android:color/transparent" />
 
                     <FrameLayout
                         android:id="@+id/linesContainer"

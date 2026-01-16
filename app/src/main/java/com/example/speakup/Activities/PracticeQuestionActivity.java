@@ -1,5 +1,8 @@
 package com.example.speakup.Activities;
 
+import static com.example.speakup.FBRef.refAuth;
+import static com.example.speakup.FBRef.refRecordings;
+import static com.example.speakup.FBRef.refRecordingsMedia;
 import static com.example.speakup.Prompts.PERSONAL_PROMPT;
 import static com.example.speakup.Prompts.PROJECT_PROMPT;
 import static com.example.speakup.Prompts.VIDEO_CLIPS_PROMPT;
@@ -13,11 +16,13 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
@@ -25,15 +30,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.speakup.GeminiCallback;
 import com.example.speakup.GeminiManager;
 import com.example.speakup.Objects.Question;
+import com.example.speakup.Objects.Recording;
+import com.example.speakup.Objects.TopicDetail;
 import com.example.speakup.R;
 import com.example.speakup.TtsHelper;
 import com.example.speakup.Utilities;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,18 +59,21 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Activity for practicing a specific question.
  * <p>
  * This activity displays question details (topic, key points) and allows the user to:
  * <ul>
- *     <li>Listen to the question text via TTS.</li>
- *     <li>Record their answer in chunks (supports pause/resume).</li>
- *     <li>Visualize the recording progress and pause locations.</li>
- *     <li>Play back the recorded answer.</li>
- *     <li>Delete and restart the recording.</li>
+ * <li>Listen to the question text via TTS.</li>
+ * <li>Record their answer in chunks (supports pause/resume).</li>
+ * <li>Visualize the recording progress and pause locations.</li>
+ * <li>Play back the recorded answer.</li>
+ * <li>Delete and restart the recording.</li>
  * </ul>
  * </p>
  */
@@ -90,6 +111,7 @@ public class PracticeQuestionActivity extends Utilities {
     private int chunkCount = 0;
 
     private GeminiManager geminiManager;
+    private AlertDialog.Builder adb;
 
     /**
      * Runnable to update the recording timer and seek bar every second.
@@ -104,6 +126,21 @@ public class PracticeQuestionActivity extends Utilities {
                 recordingSeekBar.setProgress(recordedSeconds);
                 updateLinePosition();
                 recordingTimerHandler.postDelayed(this, 1000);
+            }
+        }
+    };
+
+    /**
+     * Runnable to update the SeekBar during playback.
+     */
+    private final Runnable playbackUpdaterRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                int currentPos = mediaPlayer.getCurrentPosition() / 1000;
+                recordingSeekBar.setProgress(currentPos);
+                recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", currentPos / 60, currentPos % 60));
+                recordingTimerHandler.postDelayed(this, 500);
             }
         }
     };
@@ -157,11 +194,26 @@ public class PracticeQuestionActivity extends Utilities {
         deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
         linesContainer = findViewById(R.id.linesContainer);
 
-        // Recording SeekBar is for display only
-        recordingSeekBar.setOnTouchListener((v, event) -> true);
+        //Only scrollable when not recording
+        recordingSeekBar.setOnTouchListener((v, event) -> isRecording);
+
         recordingSeekBar.setAlpha(1.0f);
         recordingSeekBar.setMax(0);
         recordingSeekBar.setProgress(0);
+
+        //Allow seeking during playback
+        recordingSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && mediaPlayer != null) {
+                    mediaPlayer.seekTo(progress * 1000);
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
         deleteRecordingBtn.setOnClickListener(v -> confirmDeleteRecording());
 
@@ -184,7 +236,6 @@ public class PracticeQuestionActivity extends Utilities {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // If the user was playing, we might want to resume, but typical behavior is stay paused
                 playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
             }
         });
@@ -198,7 +249,6 @@ public class PracticeQuestionActivity extends Utilities {
         timerHandler = new Handler();
         recordingTimerHandler = new Handler();
         tts = new TtsHelper(this);
-        // Saved as .aac because ADTS format is raw AAC
         finalFileName = getExternalCacheDir().getAbsolutePath() + "/final_record.aac";
         geminiManager = GeminiManager.getInstance();
 
@@ -235,25 +285,21 @@ public class PracticeQuestionActivity extends Utilities {
         }
 
         if (!isRecording && !isPaused && !hasPausedOnce) {
-            // Case 1: Initial Start - Start recording the first chunk
             startRecordingChunk();
             recordBtn.setImageResource(android.R.drawable.ic_media_pause);
         } else if (isRecording && !hasPausedOnce) {
-            // Case 2: First Pause - Stop current chunk, mark position, and enter paused state
             stopRecordingChunk();
             addPauseLine();
             hasPausedOnce = true;
             isPaused = true;
             recordBtn.setImageResource(android.R.drawable.ic_btn_speak_now);
         } else if (isPaused) {
-            // Case 3: Resume - Start recording a new chunk
             startRecordingChunk();
             isPaused = false;
             recordBtn.setImageResource(android.R.drawable.ic_media_pause);
         } else if (isRecording && hasPausedOnce) {
-            // Case 4: Final Stop - Stop recording, merge all chunks, and finalize
             stopRecordingChunk();
-            mergeChunks(); // Creates the one final file
+            mergeChunks();
             isFinalized = true;
             recordBtn.setImageResource(android.R.drawable.ic_btn_speak_now);
         }
@@ -270,7 +316,6 @@ public class PracticeQuestionActivity extends Utilities {
 
         recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        // CRITICAL: AAC_ADTS allows for appending files via byte streams because it includes headers
         recorder.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         recorder.setAudioEncodingBitRate(128000);
@@ -305,21 +350,15 @@ public class PracticeQuestionActivity extends Utilities {
 
     /**
      * Merges all recorded audio chunks into a single final AAC file.
-     * Reads bytes from each chunk file and writes them sequentially to the final file.
+     * Reuses {@link #getBytes(String)} to read each chunk.
      */
     private void mergeChunks() {
         File finalFile = new File(finalFileName);
-        // Automatic resource management ensures 'fos' and 'fis' close
         try (FileOutputStream fos = new FileOutputStream(finalFile)) {
             for (File chunk : audioChunks) {
                 if (chunk.exists()) {
-                    try (FileInputStream fis = new FileInputStream(chunk)) {
-                        byte[] buffer = new byte[4096];
-                        int len;
-                        while ((len = fis.read(buffer)) != -1) {
-                            fos.write(buffer, 0, len);
-                        }
-                    }
+                    byte[] chunkBytes = getBytes(chunk.getAbsolutePath());
+                    fos.write(chunkBytes);
                 }
             }
             fos.flush();
@@ -344,7 +383,6 @@ public class PracticeQuestionActivity extends Utilities {
         if (isFinalized) {
             fileToPlayPath = finalFileName;
         } else if (isPaused && !audioChunks.isEmpty()) {
-            // While paused, play the first part to let user hear what they have so far
             fileToPlayPath = audioChunks.get(0).getAbsolutePath();
         }
 
@@ -356,18 +394,28 @@ public class PracticeQuestionActivity extends Utilities {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+            recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
         } else if (mediaPlayer != null) {
             mediaPlayer.start();
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_pause);
+            recordingTimerHandler.post(playbackUpdaterRunnable);
         } else {
             mediaPlayer = new MediaPlayer();
             try {
                 mediaPlayer.setDataSource(fileToPlayPath);
                 mediaPlayer.prepare();
+
+                // MODIFIED: Sync seekbar max and start progress updater
+                recordingSeekBar.setMax(mediaPlayer.getDuration() / 1000);
+
                 mediaPlayer.start();
                 playRecordingBtn.setImageResource(android.R.drawable.ic_media_pause);
+                recordingTimerHandler.post(playbackUpdaterRunnable);
+
                 mediaPlayer.setOnCompletionListener(mp -> {
                     playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+                    recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
+                    recordingSeekBar.setProgress(recordingSeekBar.getMax());
                     mediaPlayer.release();
                     mediaPlayer = null;
                 });
@@ -381,7 +429,7 @@ public class PracticeQuestionActivity extends Utilities {
      * Shows a confirmation dialog before deleting the current recording.
      */
     private void confirmDeleteRecording() {
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb = new AlertDialog.Builder(this);
         adb.setTitle("Delete Recording?");
         adb.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
             @Override
@@ -392,8 +440,7 @@ public class PracticeQuestionActivity extends Utilities {
                 resetUI();
             }
         });
-        adb.setNegativeButton("Cancel", null);
-        adb.show();
+        adb.setNegativeButton("Cancel", null).show();
     }
 
     /**
@@ -462,7 +509,7 @@ public class PracticeQuestionActivity extends Utilities {
      * Shows a confirmation dialog when attempting to exit with an active recording.
      */
     private void showExitDialog() {
-        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb = new AlertDialog.Builder(this);
         adb.setTitle("Exit Practice?");
         adb.setMessage("Your recording will be deleted.");
         adb.setPositiveButton("Exit", new DialogInterface.OnClickListener() {
@@ -471,7 +518,12 @@ public class PracticeQuestionActivity extends Utilities {
                 finish();
             }
         });
-        adb.setNegativeButton("Stay", null).show();
+        adb.setNegativeButton("Stay", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        }).show();
     }
 
     /**
@@ -564,24 +616,20 @@ public class PracticeQuestionActivity extends Utilities {
      * @param view The view that was clicked.
      */
     public void checkRecording(View view) {
-        if (recordedSeconds > 0 && isPaused) {
+        if (recordedSeconds > 0 && (isPaused || isFinalized)) {
             if (isRecording) {
                 stopRecordingChunk();
             }
-            AlertDialog.Builder adb = new AlertDialog.Builder(this);
+
+            adb = new AlertDialog.Builder(this);
             adb.setTitle("Check answer");
             adb.setMessage("Do you want to proceed to check your answer?");
             adb.setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    String filePath = "";
-                    if (isFinalized) {
-                        filePath = finalFileName;
-                    } else if (isPaused && !audioChunks.isEmpty()) {
-                        filePath = audioChunks.get(0).getAbsolutePath();
-                    }
+                    String filePath = isFinalized ? finalFileName : audioChunks.get(0).getAbsolutePath();
 
-                    byte[] bytes = null;
+                    byte[] bytes;
                     try {
                         bytes = getBytes(filePath);
                     } catch (IOException e) {
@@ -616,7 +664,12 @@ public class PracticeQuestionActivity extends Utilities {
                         @Override
                         public void onSuccess(String result) {
                             pD.dismiss();
-                            keyPointsTv.setText(result);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    createRecordingToFirebase(result);
+                                }
+                            });
                         }
 
                         @Override
@@ -627,8 +680,9 @@ public class PracticeQuestionActivity extends Utilities {
                     });
                 }
             });
-            adb.setNegativeButton("Cancel", null);
-            adb.show();
+            adb.setNegativeButton("Cancel", null).show();
+
+
         } else {
             Toast.makeText(this, "You need to record your answer.", Toast.LENGTH_SHORT).show();
         }
@@ -655,6 +709,157 @@ public class PracticeQuestionActivity extends Utilities {
     }
 
     /**
+     * Parses the AI's JSON feedback and initiates the recording name prompt.
+     *
+     * @param json The JSON string containing AI feedback and scores.
+     */
+    private void createRecordingToFirebase(String json) {
+        Map<String, TopicDetail> aiFeedBack = new HashMap<>();
+        final int[] totalScore = new int[1];
+
+        try {
+            // 1. CLEAN THE JSON (Removes ```json and ```)
+            String cleanedJson = json.replaceAll("```json", "")
+                    .replaceAll("```", "")
+                    .trim();
+
+            JSONObject root = new JSONObject(cleanedJson);
+
+            // 2. GET SCORES
+            int topicDevelopmentScore = root.getInt("topicDevelopment");
+            int deliveryScore = root.getInt("delivery");
+            int vocabularyScore = root.getInt("vocabulary");
+            int languageScore = root.getInt("language");
+            totalScore[0] = root.getInt("totalSectionScore");
+
+            // 3. GET FEEDBACK OBJECT
+            JSONObject feedback = root.getJSONObject("feedback");
+
+            // 4. HELPER TO PARSE NESTED SECTIONS (to keep code clean)
+            aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore,
+                    parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
+
+            aiFeedBack.put("delivery", new TopicDetail(deliveryScore,
+                    parseFeedbackSection(feedback.getJSONObject("delivery"))));
+
+            aiFeedBack.put("vocabulary", new TopicDetail(vocabularyScore,
+                    parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
+
+            aiFeedBack.put("language", new TopicDetail(languageScore,
+                    parseFeedbackSection(feedback.getJSONObject("language"))));
+
+            // 5. GET SUMMARY
+            String summary = feedback.getString("overallSummary");
+            aiFeedBack.put("overall", new TopicDetail(totalScore[0], summary));
+
+            // 6. SHOW DIALOG (Must be on UI Thread)
+            showNamingDialog(aiFeedBack, totalScore[0]);
+
+        } catch (JSONException e) {
+            Log.e("JSON_ERROR", "Failed to parse: " + json, e);
+            runOnUiThread(() -> Toast.makeText(this, "AI Formatting Error", Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    // Helper method to combine 'keep' and 'improve'
+    private String parseFeedbackSection(JSONObject section) throws JSONException {
+        return "Keep: " + section.getString("keep") + "\nImprove: " + section.getString("improve");
+    }
+
+    private void showNamingDialog(Map<String, TopicDetail> feedback, int score) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setCancelable(false);
+        builder.setTitle("Name your recording");
+
+        final EditText eT = new EditText(this);
+        eT.setHint("Enter recording name (e.g. My Practice 1)");
+        builder.setView(eT);
+
+        builder.setPositiveButton("Finish", (dialog, which) -> {
+            String displayTitle = eT.getText().toString();
+            // This triggers the Firebase upload, which leads to ResultsActivity
+            processFirebaseStorageAndDatabase(displayTitle, feedback, score);
+        });
+
+        builder.show();
+    }
+
+    /**
+     * Generates a final title for the recording and initiates the upload process.
+     *
+     * @param displayTitle The user-provided title (may be empty).
+     * @param feedback The parsed AI feedback map.
+     * @param score The total score given by the AI.
+     */
+    private void processFirebaseStorageAndDatabase(String displayTitle, Map<String, TopicDetail> feedback, int score) {
+        String userId = refAuth.getCurrentUser().getUid();
+
+        // Check if we need to generate a default name
+        refRecordings.child(userId).child(question.getQuestionId()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dS) {
+                String finalTitle = displayTitle;
+                if (finalTitle.isEmpty()) {
+                    long count = dS.getChildrenCount() + 1;
+                    String base = (question.getSubTopic() == null || question.getSubTopic().equals("null"))
+                            ? question.getTopic() : question.getSubTopic();
+                    finalTitle = base + " " + count;
+                }
+
+                // Create Object
+                String recordingId = refRecordings.child(userId).push().getKey();
+                Recording rec = new Recording(userId, question.getQuestionId(), finalTitle, new Date(), score, feedback);
+                rec.setRecordingId(recordingId);
+
+                // Upload File First, then save DB record on success
+                uploadAudioFile(rec);
+            }
+
+            @Override public void onCancelled(@NonNull DatabaseError e) {}
+        });
+    }
+
+    /**
+     * Uploads the audio file to Firebase Storage and saves the recording metadata to Firebase Database.
+     *
+     * @param rec The Recording object containing metadata.
+     */
+    private void uploadAudioFile(Recording rec) {
+        String filePath = isFinalized ? finalFileName : audioChunks.get(0).getAbsolutePath();
+        Uri fileUri = Uri.fromFile(new File(filePath));
+
+        StorageReference fileRef = refRecordingsMedia.child(rec.getUserId() + "/" + rec.getRecordingId() + ".aac");
+
+        ProgressDialog pD = new ProgressDialog(this);
+        pD.setCancelable(false);
+        pD.setMessage("Saving recording...");
+        pD.show();
+
+        UploadTask uploadTask = fileRef.putFile(fileUri);
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                refRecordings.child(rec.getUserId()).child(rec.getQuestionId()).child(rec.getRecordingId()).setValue(rec).addOnSuccessListener(aVoid -> {
+                    pD.dismiss();
+                    //go to the results activity
+                    Intent si = new Intent(PracticeQuestionActivity.this, ResultsActivity.class);
+                    si.putExtra("recording", rec);
+                    si.putExtra("audio_path", filePath);
+                    startActivity(si);
+                    finish();
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                pD.dismiss();
+                Log.e("FIREBASE_ERROR", "Failed: " + e.getMessage()); // Look at Logcat!
+                Toast.makeText(PracticeQuestionActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /**
      * Handles the back button click event from the UI.
      *
      * @param v The view that was clicked.
@@ -672,8 +877,9 @@ public class PracticeQuestionActivity extends Utilities {
     protected void onDestroy() {
         super.onDestroy();
         stopRecordingChunk();
-        clearAllFiles();
-        if (tts != null) tts.destroy();
+        if (tts != null) {tts.stop(); tts.destroy(); }
         if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+        recordingTimerHandler.removeCallbacks(null);
+        timerHandler.removeCallbacks(null);
     }
 }
