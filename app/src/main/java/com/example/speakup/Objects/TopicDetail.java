@@ -1,5 +1,7 @@
 package com.example.speakup.Objects;
 
+import java.io.Serializable;
+
 /**
  * Represents the details and performance summary for a specific topic.
  * <p>
@@ -8,7 +10,7 @@ package com.example.speakup.Objects;
  * to and from the Firebase Realtime Database.
  * </p>
  */
-public class TopicDetail {
+public class TopicDetail implements Serializable {
     /**
      * The score achieved for the topic.
      */

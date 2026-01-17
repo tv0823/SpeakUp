@@ -113,6 +113,13 @@ public class Recording implements Serializable {
     }
 
     /**
+     * Sets the display title of the recording.
+     *
+     * @param displayTitle The new recording ID.
+     */
+    public void setDisplayTitle(String displayTitle) {this.displayTitle = displayTitle;}
+
+    /**
      * Gets the date and time when the recording was made.
      *
      * @return The date recorded.

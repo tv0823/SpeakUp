@@ -853,7 +853,7 @@ public class PracticeQuestionActivity extends Utilities {
             @Override
             public void onFailure(@NonNull Exception e) {
                 pD.dismiss();
-                Log.e("FIREBASE_ERROR", "Failed: " + e.getMessage()); // Look at Logcat!
+                Log.e("FIREBASE_ERROR", "Failed: " + e.getMessage());
                 Toast.makeText(PracticeQuestionActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });

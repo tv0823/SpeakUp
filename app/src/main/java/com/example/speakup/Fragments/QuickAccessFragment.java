@@ -12,10 +12,8 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import com.example.speakup.Activities.MasterActivity;
-import com.example.speakup.Activities.PastRecordingsActivity;
 import com.example.speakup.Activities.RemindersActivity;
 import com.example.speakup.Activities.SimulationsActivity;
 import com.example.speakup.R;
@@ -93,7 +91,7 @@ public class QuickAccessFragment extends Fragment {
             btnPractice.setOnClickListener(v -> {
                 // 1. Switch the Fragment
                 getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new PracticeTopicsFragment())
+                        .replace(R.id.fragment_container, new TopicsFragment("Practice Topics"))
                         .commit();
 
                 // 2. Sync the Bottom Navigation Bar UI
@@ -115,8 +113,16 @@ public class QuickAccessFragment extends Fragment {
         MaterialButton btnPastRecordings = view.findViewById(R.id.btnPastRecordings);
         if (btnPastRecordings != null) {
             btnPastRecordings.setOnClickListener(v -> {
-                Intent intent = new Intent(getActivity(), PastRecordingsActivity.class);
-                startActivity(intent);
+                // 1. Switch the Fragment
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new TopicsFragment("Past Recordings"))
+                        .commit();
+
+                // 2. Sync the Bottom Navigation Bar UI
+                if (getActivity() instanceof MasterActivity) {
+                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                    nav.setSelectedItemId(R.id.nav_recordings);
+                }
             });
         }
 

@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.Toast;
 
-import com.example.speakup.Fragments.PracticeTopicsFragment;
+import com.example.speakup.Fragments.TopicsFragment;
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
 import com.example.speakup.Utilities;
@@ -39,19 +39,13 @@ public class MasterActivity extends Utilities {
             Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
             Fragment selectedFragment = null;
             if (itemId == R.id.nav_home) {
-                // Check if we are already on Home
-                if (!(currentFragment instanceof QuickAccessFragment)) {
-                    selectedFragment = new QuickAccessFragment();
-                }
+                selectedFragment = new QuickAccessFragment();
             } else if (itemId == R.id.nav_practice) {
-                // Check if we are already on Practice
-                if (!(currentFragment instanceof PracticeTopicsFragment)) {
-                    selectedFragment = new PracticeTopicsFragment();
-                }
+                selectedFragment = new TopicsFragment("Practice Topics");
             } else if (itemId == R.id.nav_simulations) {
                 Toast.makeText(this, "Simulations", Toast.LENGTH_SHORT).show();
             } else if (itemId == R.id.nav_recordings) {
-                Toast.makeText(this, "Recordings", Toast.LENGTH_SHORT).show();
+                selectedFragment = new TopicsFragment("Past Recordings");
             } else if (itemId == R.id.nav_profile) {
                 Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show();
             }

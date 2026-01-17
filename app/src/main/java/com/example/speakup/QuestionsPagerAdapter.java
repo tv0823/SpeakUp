@@ -2,28 +2,30 @@ package com.example.speakup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.speakup.Fragments.QuestionsGeneralFragment;
+import com.example.speakup.Fragments.RecordingsGeneralFragment;
 
 /**
  * Adapter for managing the fragments in the practice questions ViewPager.
  * <p>
  * This adapter is responsible for creating and supplying the appropriate {@link Fragment}
- * for each tab in the {@link com.example.speakup.Fragments.PracticeTopicsFragment}.
+ * for each tab in the {@link com.example.speakup.Fragments.TopicsFragment}.
  * It handles navigation between different question categories: Personal, Project, and Video Clip questions.
  * </p>
  */
-public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
+public class QuestionsPagerAdapter extends FragmentStateAdapter {
+    private String type;
 
     /**
-     * Constructs a new PracticeQuestionsPagerAdapter.
+     * Constructs a new QuestionsPagerAdapter.
      *
      * @param fragment The {@link Fragment} that hosts the ViewPager2.
      */
-    public PracticeQuestionsPagerAdapter(@NonNull Fragment fragment) {
+    public QuestionsPagerAdapter(@NonNull Fragment fragment, String type) {
         super(fragment);
+        this.type = type;
     }
 
     /**
@@ -43,15 +45,24 @@ public class PracticeQuestionsPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        switch (position) {
-            case 0:
-                return QuestionsGeneralFragment.newInstance("Personal Questions");
-            case 1:
-                return QuestionsGeneralFragment.newInstance("Project Questions");
-            case 2:
-                return QuestionsGeneralFragment.newInstance("Video Clip Questions");
-            default:
-                return QuestionsGeneralFragment.newInstance("Personal Questions");
+        if (this.type.equals("Practice Topics")) {
+            switch (position) {
+                case 1:
+                    return QuestionsGeneralFragment.newInstance("Project Questions");
+                case 2:
+                    return QuestionsGeneralFragment.newInstance("Video Clip Questions");
+                default:
+                    return QuestionsGeneralFragment.newInstance("Personal Questions");
+            }
+        } else {
+            switch (position) {
+                case 1:
+                    return RecordingsGeneralFragment.newInstance("Project Questions");
+                case 2:
+                    return RecordingsGeneralFragment.newInstance("Video Clip Questions");
+                default:
+                    return RecordingsGeneralFragment.newInstance("Personal Questions");
+            }
         }
     }
 

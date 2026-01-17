@@ -24,11 +24,11 @@
                 android:layout_weight="29" />
 
             <TextView
+                android:id="@+id/typeTv"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="42"
                 android:gravity="center"
-                android:text="Practice Topics"
                 android:textColor="#000000"
                 android:textSize="18sp"
                 android:textStyle="bold" />

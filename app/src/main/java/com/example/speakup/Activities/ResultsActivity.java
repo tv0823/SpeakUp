@@ -81,20 +81,19 @@ public class ResultsActivity extends Utilities {
         gi = getIntent();
         initViews();
 
-        String recordingId = gi.getStringExtra("recording_id");
-        String practiceCachePath = gi.getStringExtra("recordingPath");
+        Recording rec = (Recording) gi.getSerializableExtra("recording");
+        if (rec != null) {
+            setDataRecording(rec);
+        }
 
-        if (recordingId == null) {
+        String practiceCachePath = gi.getStringExtra("audio_path");
+
+        if (practiceCachePath != null) {
             // WAY 1: Coming from Practice Screen
-            Recording rec = (Recording) gi.getSerializableExtra("recording");
-            if (rec != null) {
-                setDataRecording(rec);
-                handleAudioLogic(rec, practiceCachePath);
-            }
+            handleAudioLogic(rec, practiceCachePath);
         } else {
-            // WAY 2: Coming from History Screen
-            String questionId = gi.getStringExtra("question_Id");
-            initRecordingData(questionId, recordingId);
+            // WAY 2: Coming from Past Recording Screen
+            handleAudioLogic(rec, null);
         }
 
         setupExpandableBubble(headerTopic, contentTopic, arrowTopic);
@@ -150,28 +149,6 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Fetches recording data from Firebase Database for a specific user and question.
-     *
-     * @param questionId The ID of the question the recording belongs to.
-     * @param recId      The unique ID of the recording.
-     */
-    private void initRecordingData(String questionId, String recId) {
-        String userId = refAuth.getCurrentUser().getUid();
-        refRecordings.child(userId).child(questionId).child(recId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dS) {
-                Recording rec = dS.getValue(Recording.class);
-                if (rec != null) {
-                    setDataRecording(rec);
-                    handleAudioLogic(rec, null);
-                }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError dbError) {}
-        });
-    }
-
-    /**
      * Manages the logic for obtaining the audio file (either from local cache or Firebase).
      *
      * @param rec       The recording object.
@@ -220,9 +197,9 @@ public class ResultsActivity extends Utilities {
      */
     private void moveFile(File source, File destination) {
         try (InputStream in = new FileInputStream(source); OutputStream out = new FileOutputStream(destination)) {
-            byte[] buf = new byte[8192];
+            byte[] buffer = new byte[4096];
             int len;
-            while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+            while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
             source.delete();
         } catch (Exception e) { e.printStackTrace(); }
     }
@@ -234,7 +211,7 @@ public class ResultsActivity extends Utilities {
      */
     private void setDataRecording(Recording rec) {
         Map<String, TopicDetail> fb = rec.getAiFeedBack();
-        scoreTv.setText(String.valueOf(rec.getScore()));
+        scoreTv.setText(String.valueOf(rec.getScore()) + "/100");
         scoreProgressBar.setProgress(rec.getScore());
 
         if (fb != null) {

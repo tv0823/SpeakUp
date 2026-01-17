@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    tools:context=".Fragments.RecordingsGeneralFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleGroup"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/toggle_background"
+                android:padding="4dp"
+                app:checkedButton="@id/btnGrade"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGrade"
+                    style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Grade"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:textColor="@color/toggle_text_selector"
+                    app:backgroundTint="@color/toggle_button_selector"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Pill"
+                    app:strokeColor="@color/toggle_stroke_selector"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDate"
+                    style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Date"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:textColor="@color/toggle_text_selector"
+                    app:backgroundTint="@color/toggle_button_selector"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Pill"
+                    app:strokeColor="@color/toggle_stroke_selector"
+                    app:strokeWidth="1dp" />
+
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <ImageButton
+                android:id="@+id/btnSortDirection"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Sort Order"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@android:drawable/arrow_up_float"
+                app:tint="#78849E" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/fragmentTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="My Recordings"
+                android:textColor="#000000"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerTopics"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mainColumnsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/columnLeft"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingEnd="8dp"
+                tools:ignore="RtlSymmetry" />
+
+            <LinearLayout
+                android:id="@+id/columnRight"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="8dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvNoData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No recordings found for this category."
+            android:gravity="center"
+            android:visibility="gone"
+            android:paddingTop="50dp"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+</ScrollView>
