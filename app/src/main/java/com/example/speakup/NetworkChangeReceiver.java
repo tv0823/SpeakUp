@@ -21,7 +21,7 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
     /**
      * Static flag indicating the current connection status.
      */
-    public static boolean isConnected = false;
+    private static boolean isConnected = false;
 
     /**
      * Static reference to the network connection warning dialog.

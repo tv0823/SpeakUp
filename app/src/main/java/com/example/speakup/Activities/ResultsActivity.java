@@ -41,37 +41,165 @@ import java.io.OutputStream;
 import java.util.Map;
 
 /**
- * Activity for displaying the results and AI feedback of a recorded practice session.
+ * Activity for displaying the results and AI-generated feedback of a recorded practice session.
  * <p>
- * This activity handles:
+ * This activity provides a comprehensive review of the user's performance, including:
  * <ul>
- * <li>Retrieving recording data from Intent or Firebase.</li>
- * <li>Displaying scores and feedback for different categories (Topic, Delivery, Vocabulary, Language).</li>
- * <li>Playback of the recorded audio with a progress seek bar.</li>
- * <li>Expandable UI sections for detailed feedback.</li>
+ *     <li>Overall score visualization via a ProgressBar and TextView.</li>
+ *     <li>Detailed feedback sections for Topic Development, Delivery, Vocabulary, and Language.</li>
+ *     <li>Expandable UI components to toggle the visibility of specific feedback details.</li>
+ *     <li>Audio playback functionality to listen to the original recording with a synchronized SeekBar.</li>
+ *     <li>Automatic synchronization of audio files between local cache and Firebase Storage.</li>
  * </ul>
  * </p>
  */
 public class ResultsActivity extends Utilities {
-    private LinearLayout headerTopic, headerDelivery, headerVocab, headerLanguage;
-    private TextView scoreTv, topicTv, deliveryTv, vocabTv, languageTv;
-    private TextView contentTopic, contentDelivery, contentVocab, contentLanguage, contentSummary, recordedTimeTv;
-    private ImageView arrowTopic, arrowDelivery, arrowVocab, arrowLanguage;
+
+    /**
+     * Header container for the Topic Development feedback section.
+     */
+    private LinearLayout headerTopic;
+
+    /**
+     * Header container for the Delivery feedback section.
+     */
+    private LinearLayout headerDelivery;
+
+    /**
+     * Header container for the Vocabulary feedback section.
+     */
+    private LinearLayout headerVocab;
+
+    /**
+     * Header container for the Language feedback section.
+     */
+    private LinearLayout headerLanguage;
+
+    /**
+     * TextView for displaying the overall score (e.g., "85/100").
+     */
+    private TextView scoreTv;
+
+    /**
+     * TextView for the Topic Development section title and score.
+     */
+    private TextView topicTv;
+
+    /**
+     * TextView for the Delivery section title and score.
+     */
+    private TextView deliveryTv;
+
+    /**
+     * TextView for the Vocabulary section title and score.
+     */
+    private TextView vocabTv;
+
+    /**
+     * TextView for the Language section title and score.
+     */
+    private TextView languageTv;
+
+    /**
+     * TextView for the detailed feedback text of the Topic Development section.
+     */
+    private TextView contentTopic;
+
+    /**
+     * TextView for the detailed feedback text of the Delivery section.
+     */
+    private TextView contentDelivery;
+
+    /**
+     * TextView for the detailed feedback text of the Vocabulary section.
+     */
+    private TextView contentVocab;
+
+    /**
+     * TextView for the detailed feedback text of the Language section.
+     */
+    private TextView contentLanguage;
+
+    /**
+     * TextView for the overall AI-generated summary of the practice session.
+     */
+    private TextView contentSummary;
+
+    /**
+     * TextView displaying the current playback time of the recording.
+     */
+    private TextView recordedTimeTv;
+
+    /**
+     * Arrow indicator for the Topic Development feedback section.
+     */
+    private ImageView arrowTopic;
+
+    /**
+     * Arrow indicator for the Delivery feedback section.
+     */
+    private ImageView arrowDelivery;
+
+    /**
+     * Arrow indicator for the Vocabulary feedback section.
+     */
+    private ImageView arrowVocab;
+
+    /**
+     * Arrow indicator for the Language feedback section.
+     */
+    private ImageView arrowLanguage;
+
+    /**
+     * ProgressBar visualizing the overall score.
+     */
     private ProgressBar scoreProgressBar;
+
+    /**
+     * Button to toggle playback (Play/Pause) of the recorded audio.
+     */
     private ImageButton playRecordingBtn;
+
+    /**
+     * SeekBar representing the progress of the audio recording playback.
+     */
     private SeekBar recordingSeekBar;
 
+    /**
+     * The intent used to launch this activity, containing the {@link Recording} object.
+     */
     private Intent gi;
+
+    /**
+     * Reference to the local audio file (.aac) for playback.
+     */
     private File localAudioFile;
+
+    /**
+     * MediaPlayer instance for handling audio playback of the recording.
+     */
     private MediaPlayer mediaPlayer;
-    private Handler seekBarHandler = new Handler();
+
+    /**
+     * Handler for managing periodic UI updates of the SeekBar during playback.
+     */
+    private final Handler seekBarHandler = new Handler();
+
+    /**
+     * Runnable task that updates the SeekBar progress and time labels during playback.
+     */
     private Runnable updateSeekBarRunnable;
 
     /**
-     * Called when the activity is starting.
-     * Initializes views, retrieves intent data, and sets up expandable UI components.
+     * Initializes the activity, sets up the UI, and triggers the data loading process.
+     * <p>
+     * It retrieves the {@link Recording} data and the audio path from the intent. 
+     * If coming from the practice screen, it attempts to move the cached recording to internal storage.
+     * Otherwise, it downloads the file from Firebase.
+     * </p>
      *
-     * @param savedInstanceState If the activity is being re-initialized after previously being shut down then this Bundle contains the data it most recently supplied.
+     * @param savedInstanceState If the activity is being re-initialized after previously being 
+     *                           shut down then this Bundle contains the data it most recently supplied.
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,7 +231,8 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Initializes all UI views and sets up the recording seek bar listener.
+     * Finds and initializes all UI components from the layout.
+     * Sets up the {@link SeekBar.OnSeekBarChangeListener} to allow user seeking during playback.
      */
     private void initViews() {
         headerTopic = findViewById(R.id.headerTopic);
@@ -149,10 +278,15 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Manages the logic for obtaining the audio file (either from local cache or Firebase).
+     * Handles the acquisition of the audio file for playback.
+     * <p>
+     * If the file exists in internal storage, it uses it. If a cache path is provided (from a 
+     * fresh recording), it moves that file to internal storage. Otherwise, it triggers a 
+     * download from Firebase Storage.
+     * </p>
      *
-     * @param rec       The recording object.
-     * @param cachePath The path to a temporary cache file, if available.
+     * @param rec       The {@link Recording} object containing the unique ID.
+     * @param cachePath The temporary path of a newly recorded audio file, or null.
      */
     private void handleAudioLogic(Recording rec, String cachePath) {
         localAudioFile = new File(getFilesDir(), rec.getRecordingId() + ".aac");
@@ -170,30 +304,31 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Downloads the audio file associated with the recording from Firebase Storage.
+     * Downloads the audio recording file from Firebase Storage and saves it to internal storage.
      *
-     * @param rec The recording object containing metadata for the download.
+     * @param rec The {@link Recording} object containing metadata required for the storage path.
      */
     private void downloadFromFirebase(Recording rec) {
         StorageReference refFile = refRecordingsMedia.child(rec.getUserId() + "/" + rec.getRecordingId() + ".aac");
         refFile.getFile(localAudioFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                Log.d("Audio", "Downloaded");
+                Log.d("Audio", "Downloaded successfully");
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e("Audio", "Download failed");
+                Log.e("Audio", "Download failed", e);
             }
         });
     }
 
     /**
-     * Moves a file from a source location to a destination location.
+     * Moves a file from a source location to a destination location using streams.
+     * The source file is deleted upon successful transfer.
      *
-     * @param source      The file to be moved.
-     * @param destination The destination location.
+     * @param source      The source {@link File}.
+     * @param destination The destination {@link File}.
      */
     private void moveFile(File source, File destination) {
         try (InputStream in = new FileInputStream(source); OutputStream out = new FileOutputStream(destination)) {
@@ -201,17 +336,19 @@ public class ResultsActivity extends Utilities {
             int len;
             while ((len = in.read(buffer)) > 0) out.write(buffer, 0, len);
             source.delete();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            Log.e("FileMove", "Error moving file", e);
+        }
     }
 
     /**
-     * Populates the UI with data from the provided Recording object.
+     * Populates the activity's UI components with data from the {@link Recording} object.
      *
-     * @param rec The recording data to display.
+     * @param rec The {@link Recording} data to be displayed.
      */
     private void setDataRecording(Recording rec) {
         Map<String, TopicDetail> fb = rec.getAiFeedBack();
-        scoreTv.setText(String.valueOf(rec.getScore()) + "/100");
+        scoreTv.setText(rec.getScore() + "/100");
         scoreProgressBar.setProgress(rec.getScore());
 
         if (fb != null) {
@@ -226,13 +363,13 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Updates the UI for a specific feedback category (bubble).
+     * Updates a specific feedback category's UI components.
      *
-     * @param detail  The TopicDetail object containing score and summary.
-     * @param title   The TextView for the category title.
-     * @param content The TextView for the category feedback content.
-     * @param label   The label name for the category.
-     * @param max     The maximum possible score for this category.
+     * @param detail  The {@link TopicDetail} containing the score and descriptive summary.
+     * @param title   The TextView for the category's header title.
+     * @param content The TextView containing the detailed feedback text.
+     * @param label   The display name of the category (e.g., "Delivery").
+     * @param max     The maximum possible points for this specific category.
      */
     private void updateBubbleUI(TopicDetail detail, TextView title, TextView content, String label, int max) {
         if (detail != null) {
@@ -242,9 +379,10 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Toggles between play and pause for the recorded audio.
+     * Toggles between playing and pausing the audio recording.
+     * Initializes the MediaPlayer if it's the first time playing.
      *
-     * @param view The view that was clicked.
+     * @param view The view that was clicked (Play/Pause button).
      */
     public void playPauseRecording(View view) {
         if (localAudioFile == null || !localAudioFile.exists()) {
@@ -265,7 +403,8 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Initializes the MediaPlayer with the local audio file and starts playback.
+     * Configures and starts the {@link MediaPlayer} with the local audio file.
+     * Sets the SeekBar max value and defines the completion listener.
      */
     private void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
@@ -283,13 +422,16 @@ public class ResultsActivity extends Utilities {
                     playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
                     recordingSeekBar.setProgress(0);
                     stopSeekBarUpdate();
+                    updateTimeUI(0);
                 }
             });
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            Log.e("MediaPlayer", "Initialization failed", e);
+        }
     }
 
     /**
-     * Starts the periodic update of the recording seek bar and time display.
+     * Begins the periodic update of the SeekBar and time UI during audio playback.
      */
     private void startSeekBarUpdate() {
         updateSeekBarRunnable = new Runnable() {
@@ -307,16 +449,18 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Stops the periodic update of the recording seek bar.
+     * Cancels any pending SeekBar UI updates.
      */
     private void stopSeekBarUpdate() {
-        if (updateSeekBarRunnable != null) seekBarHandler.removeCallbacks(updateSeekBarRunnable);
+        if (updateSeekBarRunnable != null) {
+            seekBarHandler.removeCallbacks(updateSeekBarRunnable);
+        }
     }
 
     /**
-     * Updates the time text view based on the current playback position in milliseconds.
+     * Updates the time TextView based on the current millisecond position of the audio.
      *
-     * @param ms Current position in milliseconds.
+     * @param ms The current playback position in milliseconds.
      */
     private void updateTimeUI(int ms) {
         int sec = (ms / 1000) % 60;
@@ -325,11 +469,11 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Configures a layout section to be expandable on click, toggling content visibility and arrow rotation.
+     * Sets up an expandable layout bubble where clicking the header toggles the content visibility.
      *
-     * @param header  The clickable layout header.
-     * @param content The TextView content to be shown/hidden.
-     * @param arrow   The ImageView arrow to rotate.
+     * @param header  The {@link LinearLayout} header that acts as a toggle button.
+     * @param content The {@link TextView} that is shown or hidden.
+     * @param arrow   The {@link ImageView} representing an arrow that rotates based on state.
      */
     private void setupExpandableBubble(final LinearLayout header, final TextView content, final ImageView arrow) {
         header.setOnClickListener(new View.OnClickListener() {
@@ -347,20 +491,25 @@ public class ResultsActivity extends Utilities {
     }
 
     /**
-     * Finishes the activity and returns to the previous screen.
+     * Closes the results screen and returns to the previous activity.
      *
      * @param v The view that was clicked.
      */
-    public void goBack(View v) { finish(); }
+    public void goBack(View v) {
+        finish();
+    }
 
     /**
-     * Performs final cleanup before the activity is destroyed.
-     * Releases the MediaPlayer and stops seek bar updates.
+     * Performs cleanup before the activity is destroyed.
+     * Releases the {@link MediaPlayer} and stops UI update handlers.
      */
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         stopSeekBarUpdate();
     }
 }

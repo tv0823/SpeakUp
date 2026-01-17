@@ -3,23 +3,29 @@ package com.example.speakup.Objects;
 import java.io.Serializable;
 
 /**
- * Represents the details and performance summary for a specific topic.
+ * Represents the details and performance summary for a specific topic or feedback category.
  * <p>
  * This class stores the score achieved and a textual summary/feedback for a topic
- * practiced by the user. It is used for mapping topic-specific performance data
- * to and from the Firebase Realtime Database.
+ * practiced by the user. It is used for mapping performance data to and from the
+ * Firebase Realtime Database and for passing between components via {@link Serializable}.
  * </p>
  */
 public class TopicDetail implements Serializable {
+
     /**
-     * The score achieved for the topic.
+     * The score achieved for the topic/category.
      */
     private int score;
 
     /**
-     * A textual summary or feedback for the topic.
+     * A textual summary or feedback for the topic/category.
      */
     private String summary;
+
+    /**
+     * Default constructor required for calls to DataSnapshot.getValue(TopicDetail.class).
+     */
+    public TopicDetail() {}
 
     /**
      * Constructs a new TopicDetail with the specified score and summary.
@@ -33,21 +39,38 @@ public class TopicDetail implements Serializable {
     }
 
     /**
-     * Gets the score achieved for the topic.
+     * Gets the score achieved for the topic/category.
      *
      * @return The score.
      */
-    public int getScore() { return score; }
+    public int getScore() {
+        return score;
+    }
 
     /**
-     * Gets the summary or feedback for the topic.
+     * Sets the score achieved for the topic/category.
+     *
+     * @param score The score to set.
+     */
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    /**
+     * Gets the summary or feedback for the topic/category.
      *
      * @return The summary text.
      */
-    public String getSummary() { return summary; }
+    public String getSummary() {
+        return summary;
+    }
 
     /**
-     * Default constructor required for calls to DataSnapshot.getValue(TopicDetail.class).
+     * Sets the summary or feedback for the topic/category.
+     *
+     * @param summary The summary text to set.
      */
-    public TopicDetail() {}
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
 }

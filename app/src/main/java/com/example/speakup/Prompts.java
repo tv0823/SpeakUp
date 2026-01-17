@@ -1,10 +1,23 @@
 package com.example.speakup;
 
+/**
+ * A utility class that holds the constant strings for AI prompts and JSON schemas.
+ * <p>
+ * This class centralizes the instructions and structured data formats used when interacting
+ * with the Gemini AI model to grade student recordings for the COBE (Computerized Oral
+ * Bagrut Exam) in English. It includes rubrics for grading, specific task prompts for
+ * different exam sections, and JSON schemas to ensure consistent AI responses.
+ * </p>
+ */
 public class Prompts {
 
     // --- SCHEMAS ---
 
-    // Schema for individual sections (Personal, Project, Video)
+    /**
+     * JSON schema for an individual feedback section (e.g., Personal Response, Project, or Video).
+     * Defines the structure for scores (Topic Development, Delivery, Vocabulary, Language),
+     * total score, and detailed "keep/improve" feedback for each category.
+     */
     public static final String COMPONENT_SCHEMA =
             "{\n" +
                     "  \"type\": \"object\",\n" +
@@ -28,7 +41,11 @@ public class Prompts {
                     "  \"required\": [\"topicDevelopment\", \"delivery\", \"vocabulary\", \"language\", \"totalSectionScore\", \"feedback\"]\n" +
                     "}";
 
-    // Main schema for the entire exam
+    /**
+     * Main JSON schema for the entire exam grading.
+     * Combines multiple {@link #COMPONENT_SCHEMA} objects for each part of the COBE exam
+     * and includes a final overall grade.
+     */
     public static final String MAIN_EXAM_SCHEMA =
             "{\n" +
                     "  \"type\": \"object\",\n" +
@@ -42,6 +59,14 @@ public class Prompts {
 
     // --- MEGA PROMPT INSTRUCTIONS ---
 
+    /**
+     * Detailed grading scale and criteria used by the AI to evaluate recordings.
+     * Covers weightings and descriptors for:
+     * 1. Topic Development (50%)
+     * 2. Delivery (15%)
+     * 3. Vocabulary (20%)
+     * 4. Language (15%)
+     */
     private static final String RUBRIC_INSTRUCTIONS =
             "Grading Scale & Criteria:\n" +
                     "1. Topic Development (50%): \n" +
@@ -65,6 +90,9 @@ public class Prompts {
                     "   - 54-26: Partial use of structures with many errors.\n" +
                     "   - 25-0: Mostly incorrect, uses languages other than English.\n";
 
+    /**
+     * AI prompt for evaluating the 'Personal Response' section of the exam.
+     */
     public static final String PERSONAL_PROMPT =
             "Task: Grade the 12th grade student on the 'Personal Response' recording of the COBE exam.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
@@ -73,6 +101,10 @@ public class Prompts {
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
+    /**
+     * AI prompt for evaluating the 'Project Presentation' section of the exam.
+     * Includes requirements for explaining research processes and personal insights.
+     */
     public static final String PROJECT_PROMPT =
             "Task: Grade the 12th grade student on the 'Project Presentation' recording of the COBE exam.\n" +
                     "Ensure the student explains the research process and personal insights.\n" +
@@ -82,6 +114,10 @@ public class Prompts {
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
+    /**
+     * AI prompt for evaluating the 'Video Clip Responses' section of the exam.
+     * Emphasizes that answers must be derived from the video's spoken content.
+     */
     public static final String VIDEO_CLIPS_PROMPT =
             "Task: Grade the 12th grade student on the 'Video Clip Responses' (Part C) recording.\n" +
                     "Crucial: Answers MUST be based on the spoken text from the video clip. Deduct Topic Development points if inaccurate.\n" +
@@ -91,6 +127,10 @@ public class Prompts {
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
+    /**
+     * AI prompt for aggregating all recorded sections to calculate the final COBE exam grade.
+     * Specifies equal weighting (25%) for each section.
+     */
     public static final String ALL_RECORDINGS_PROMPT =
             "Task: Calculate the final COBE exam grade.\n" +
                     "Weights: Personal (25%), Project (25%), Video Clip (25%), and Other (25%).\n" +

@@ -35,23 +35,75 @@ import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 
+/**
+ * A fragment that displays a sortable grid of recordings for a specific category.
+ * <p>
+ * This fragment fetches recording data from Firebase Realtime Database, filters them by category,
+ * and displays them in a two-column staggered layout. It supports:
+ * <ul>
+ *     <li>Sorting by Grade (Score) or Date Recorded.</li>
+ *     <li>Toggling sort direction (Ascending vs. Descending).</li>
+ *     <li>Navigating to the {@link ResultsActivity} on click.</li>
+ *     <li>Renaming recordings via long-press.</li>
+ * </ul>
+ * </p>
+ */
 public class RecordingsGeneralFragment extends Fragment {
+
+    /**
+     * Left column container for the staggered grid.
+     */
     private LinearLayout columnLeft;
+
+    /**
+     * Right column container for the staggered grid.
+     */
     private LinearLayout columnRight;
+
+    /**
+     * Toggle group for selecting the sorting criteria (Grade vs. Date).
+     */
     private MaterialButtonToggleGroup toggleGroup;
+
+    /**
+     * Button to toggle the sorting direction (Up/Down).
+     */
     private ImageButton btnSortDirection;
 
+    /**
+     * List of all recordings fetched from Firebase that belong to the current category.
+     */
     private ArrayList<Recording> allRecordingsList;
+
+    /**
+     * The UID of the currently authenticated user.
+     */
     private String currentUserId;
+
+    /**
+     * The category identifier used to filter recordings (e.g., "Personal Questions").
+     */
     private String categoryPath;
 
-    // Flag to track if we are sorting Ascending (Low to High) or Descending (High to Low)
+    /**
+     * Flag to track if the current sort direction is Ascending (true) or Descending (false).
+     * Defaults to Descending (Newest first / Highest score first).
+     */
     private boolean isAscending = false;
 
+    /**
+     * Required empty public constructor for fragment instantiation.
+     */
     public RecordingsGeneralFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Creates a new instance of this fragment with a specific category filter.
+     *
+     * @param category The category path used to filter recordings (e.g., "Personal Questions").
+     * @return A new instance of RecordingsGeneralFragment.
+     */
     public static RecordingsGeneralFragment newInstance(String category) {
         RecordingsGeneralFragment fragment = new RecordingsGeneralFragment();
         Bundle args = new Bundle();
@@ -60,6 +112,11 @@ public class RecordingsGeneralFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Initializes the fragment and retrieves the category argument.
+     *
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state.
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +125,14 @@ public class RecordingsGeneralFragment extends Fragment {
         }
     }
 
+    /**
+     * Inflates the layout and initializes UI components and logic listeners.
+     *
+     * @param inflater           The LayoutInflater object that can be used to inflate views.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_recordings_general, container, false);
@@ -90,6 +155,9 @@ public class RecordingsGeneralFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Sets up the listener for the sort criteria toggle group (Date vs. Grade).
+     */
     private void setupToggleLogic() {
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
@@ -98,8 +166,11 @@ public class RecordingsGeneralFragment extends Fragment {
         });
     }
 
+    /**
+     * Sets up the listener for the sort direction button and initializes its icon.
+     */
     private void setupSortDirectionLogic() {
-        // Initial icon set to Down (High to Low)
+        // Initial icon set to Down (High to Low / Newest to Oldest)
         btnSortDirection.setImageResource(android.R.drawable.arrow_down_float);
 
         btnSortDirection.setOnClickListener(new View.OnClickListener() {
@@ -120,6 +191,15 @@ public class RecordingsGeneralFragment extends Fragment {
         });
     }
 
+    /**
+     * Fetches recording data from Firebase Realtime Database.
+     * <p>
+     * It performs a multi-step fetch:
+     * 1. Listens for all recordings of the current user.
+     * 2. For each question that has recordings, checks if that question belongs to the current {@link #categoryPath}.
+     * 3. Aggregates all valid recordings into {@link #allRecordingsList} and triggers a UI update.
+     * </p>
+     */
     private void fetchRecordingsFromFirebase() {
         if (categoryPath == null || currentUserId == null) return;
 
@@ -162,6 +242,14 @@ public class RecordingsGeneralFragment extends Fragment {
         });
     }
 
+    /**
+     * Sorts the recording list based on the chosen criteria and direction, then refreshes the UI.
+     * <p>
+     * Uses a Selection Sort implementation to reorder {@link #allRecordingsList}.
+     * </p>
+     *
+     * @param sortByGrade If true, sorts by score. If false, sorts by recording date.
+     */
     private void applySortAndDisplay(boolean sortByGrade) {
         if (allRecordingsList == null || allRecordingsList.isEmpty()) return;
         int n = allRecordingsList.size();
@@ -206,6 +294,9 @@ public class RecordingsGeneralFragment extends Fragment {
         displayRecordings();
     }
 
+    /**
+     * Clears and repopulates the two-column grid with recording cards.
+     */
     private void displayRecordings() {
         if (columnLeft == null || columnRight == null) return;
         columnLeft.removeAllViews();
@@ -217,6 +308,15 @@ public class RecordingsGeneralFragment extends Fragment {
         }
     }
 
+    /**
+     * Inflates a recording card view and adds it to the specified container.
+     * <p>
+     * Sets up click listeners for viewing results and long-press listeners for renaming.
+     * </p>
+     *
+     * @param container The layout column to add the card to.
+     * @param recording The recording data to display on the card.
+     */
     private void addRecordingCard(LinearLayout container, Recording recording) {
         View cardView = getLayoutInflater().inflate(R.layout.item_topic_card, container, false);
         TextView titleText = cardView.findViewById(R.id.topicTitleText);
@@ -239,6 +339,11 @@ public class RecordingsGeneralFragment extends Fragment {
         container.addView(cardView);
     }
 
+    /**
+     * Displays a dialog allowing the user to rename a specific recording.
+     *
+     * @param recording The recording object to be renamed.
+     */
     private void showRenameDialog(Recording recording) {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
         builder.setTitle("Rename your recording");
@@ -273,6 +378,12 @@ public class RecordingsGeneralFragment extends Fragment {
         builder.show();
     }
 
+    /**
+     * Updates the recording's title in Firebase and refreshes the local UI upon success.
+     *
+     * @param recording The recording object whose title is being updated.
+     * @param newName   The new title for the recording.
+     */
     private void updateRecordingNameInFirebase(Recording recording, String newName) {
         // Path: recordings / userId / questionId / recordingId / displayTitle
         refRecordings.child(currentUserId)
@@ -298,6 +409,12 @@ public class RecordingsGeneralFragment extends Fragment {
                 });
     }
 
+    /**
+     * Asynchronously loads a topic image from Firebase Storage using Glide.
+     *
+     * @param imageView  The target ImageView.
+     * @param questionId The ID of the question used to locate the image in storage.
+     */
     private void loadTopicImage(ImageView imageView, String questionId) {
         String fileName = questionId + ".jpg";
         StorageReference refFile = refQuestionMedia.child(fileName);
