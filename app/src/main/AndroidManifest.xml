@@ -21,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         <activity
+            android:name=".Activities.HelpAndAboutActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activities.ResultsActivity"
             android:exported="false" />
         <activity

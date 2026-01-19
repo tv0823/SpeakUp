@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    tools:context=".Activities.HelpAndAboutActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="8"
+        android:gravity="center_vertical"
+        android:paddingTop="8dp"
+        android:orientation="horizontal">
+
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="5" />
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:background="@android:color/transparent"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/arrow_back" />
+
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="15" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="40"
+            android:gravity="center"
+            android:text="Help &amp; About"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="30" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="92"
+        android:orientation="horizontal">
+
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="7" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="86"
+            android:orientation="vertical">
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="3" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="How to use the app"
+                android:textColor="#000000"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This app is designed to help you prepare for your English oral matriculation exam. It uses AI to provide feedback on your performance, helping you identify areas for improvement.\nHere's how to get started:"
+                android:textColor="#333333"
+                android:textSize="14sp" />
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="4" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="12"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pill_background"
+                    android:padding="10dp"
+                    app:srcCompat="@drawable/ic_practice_outline" />
+                <Space android:layout_width="16dp" android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Practice"
+                        android:textColor="#000000"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Practice with a variety of questions and topics."
+                        android:textColor="#78909C"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="12"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pill_background"
+                    android:padding="10dp"
+                    app:srcCompat="@drawable/ic_simulation_outline" />
+                <Space android:layout_width="16dp" android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Simulation"
+                        android:textColor="#000000"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Simulate the exam environment with timed tests."
+                        android:textColor="#78909C"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="12"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pill_background"
+                    android:padding="10dp"
+                    app:srcCompat="@drawable/ic_recording_outline" />
+                <Space android:layout_width="16dp" android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Recordings"
+                        android:textColor="#000000"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Review your past performances and feedback."
+                        android:textColor="#78909C"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="12"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pill_background"
+                    android:padding="10dp"
+                    app:srcCompat="@drawable/ic_reminder" />
+                <Space android:layout_width="16dp" android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Reminders"
+                        android:textColor="#000000"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Set reminders for practice and simulations to stay on track."
+                        android:textColor="#78909C"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="5" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="About"
+                android:textColor="#000000"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="2" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="This app was developed by a team of educators and AI specialists to provide personalized feedback and improve your English speaking skills. \nCreated by: Tal Weintraub"
+                android:textColor="#333333"
+                android:textSize="14sp" />
+
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="15" />
+
+        </LinearLayout>
+
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="7" />
+    </LinearLayout>
+</LinearLayout>

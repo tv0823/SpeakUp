@@ -5,20 +5,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
     tools:context=".Fragments.ProfileFragment">
 
     <LinearLayout
         android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:weightSum="100">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="8"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:weightSum="100">
 
             <Space
                 android:layout_width="0dp"
@@ -45,7 +46,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="90"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:weightSum="100">
 
             <Space
                 android:layout_width="0dp"
@@ -56,40 +58,50 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="90"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:weightSum="100">
 
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="2" />
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/profileImage"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:layout_gravity="center_horizontal"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/placeholder"
-                    app:shapeAppearanceOverlay="@style/CircleImageView" />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="21">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/profileImage"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/placeholder"
+                        app:layout_constraintDimensionRatio="1:1"
+                        app:layout_constraintHeight_percent="0.9"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:shapeAppearanceOverlay="@style/CircleImageView" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
-                    android:id = "@+id/userNameTv"
+                    android:id="@+id/userNameTv"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="5"
                     android:gravity="center"
-                    android:text="UserName"
                     android:textColor="#000000"
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id = "@+id/dateTv"
+                    android:id="@+id/dateTv"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="3"
                     android:gravity="center"
-                    android:text="Joined date"
                     android:textColor="#607D8B"
                     android:textSize="14sp" />
 
@@ -123,13 +135,14 @@
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="2" />
+                    android:layout_weight="1" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="18"
-                    android:orientation="horizontal">
+                    android:layout_weight="16"
+                    android:orientation="horizontal"
+                    android:weightSum="100">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -148,10 +161,9 @@
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id = "@+id/avgScoreTv"
+                            android:id="@+id/avgScoreTv"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="85"
                             android:textColor="#000000"
                             android:textSize="28sp"
                             android:textStyle="bold" />
@@ -179,10 +191,9 @@
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id = "@+id/recordingCountTv"
+                            android:id="@+id/recordingCountTv"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="23"
                             android:textColor="#000000"
                             android:textSize="28sp"
                             android:textStyle="bold" />
