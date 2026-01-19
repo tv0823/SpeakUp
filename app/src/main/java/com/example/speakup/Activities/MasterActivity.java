@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.Toast;
 
+import com.example.speakup.Fragments.ProfileFragment;
 import com.example.speakup.Fragments.TopicsFragment;
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
@@ -69,7 +70,7 @@ public class MasterActivity extends Utilities {
             } else if (itemId == R.id.nav_recordings) {
                 selectedFragment = new TopicsFragment("Past Recordings");
             } else if (itemId == R.id.nav_profile) {
-                Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show();
+                selectedFragment = new ProfileFragment();
             }
 
             if (selectedFragment != null) {

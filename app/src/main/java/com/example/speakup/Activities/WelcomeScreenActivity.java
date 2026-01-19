@@ -16,7 +16,7 @@ import com.example.speakup.Utilities;
  * <p>
  * This is the entry point for the application. It provides options for users to either log in
  * or sign up. It also checks for an existing user session on startup; if the user has previously
- * opted to stay connected, they are automatically redirected to the {@link QuickAccessActivity}.
+ * opted to stay connected, they are automatically redirected to the {@link com.example.speakup.Fragments.QuickAccessFragment}.
  * </p>
  */
 public class WelcomeScreenActivity extends Utilities {
