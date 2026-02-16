@@ -1,6 +1,6 @@
 package com.example.speakup.Activities;
 
-import android.app.FragmentManager;
+import androidx.fragment.app.FragmentManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.Toast;
@@ -44,45 +44,64 @@ public class MasterActivity extends Utilities {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
-        // Set QuickAccessFragment as the default when the app opens
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new QuickAccessFragment())
-                    .commit();
+            loadFragment(new QuickAccessFragment());
         }
 
         bottomNav.setOnItemSelectedListener(item -> {
-            // Prevent rapid multiple clicks (debounce)
+            // 1. Debouncing is good, but let's keep it tight (250-300ms)
             if (SystemClock.elapsedRealtime() - lastClickTime < 300) {
                 return false;
             }
             lastClickTime = SystemClock.elapsedRealtime();
 
-            int itemId = item.getItemId();
             Fragment selectedFragment = null;
+            int itemId = item.getItemId();
 
             if (itemId == R.id.nav_home) {
                 selectedFragment = new QuickAccessFragment();
             } else if (itemId == R.id.nav_practice) {
-                selectedFragment = new TopicsFragment("Practice Topics");
+                selectedFragment = TopicsFragment.newInstance("Practice Topics");
             } else if (itemId == R.id.nav_simulations) {
                 Toast.makeText(this, "Simulations", Toast.LENGTH_SHORT).show();
+                return true;
             } else if (itemId == R.id.nav_recordings) {
-                selectedFragment = new TopicsFragment("Past Recordings");
+                selectedFragment = TopicsFragment.newInstance("Past Recordings");
             } else if (itemId == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
             }
 
-            if (selectedFragment != null) {
-                // Clear the backstack when switching tabs via bottom nav to maintain a clean navigation state
-                getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-
-                getSupportFragmentManager().beginTransaction()
-                        .setReorderingAllowed(true)
-                        .replace(R.id.fragment_container, selectedFragment)
-                        .commit();
-            }
-            return true;
+            return loadFragment(selectedFragment);
         });
+    }
+
+    private boolean loadFragment(Fragment fragment) {
+        if (fragment == null) return false;
+
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+        if (currentFragment != null && currentFragment.getClass().equals(fragment.getClass())) {
+            // If it's a TopicsFragment, check if the internal "type" is the same
+            if (currentFragment instanceof TopicsFragment && fragment instanceof TopicsFragment) {
+                String currentType = ((TopicsFragment) currentFragment).getType();
+                String newType = ((TopicsFragment) fragment).getType();
+
+                if (currentType != null && currentType.equals(newType)) {
+                    return false; // Exactly the same screen and data, do nothing
+                }
+            } else {
+                return false; // Same fragment class, no need to reload
+            }
+        }
+
+        if (getSupportFragmentManager().isStateSaved()) return false;
+
+        getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        getSupportFragmentManager().beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragment_container, fragment)
+                .commit();
+
+        return true;
     }
 }

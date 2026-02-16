@@ -19,14 +19,36 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class TopicsFragment extends Fragment {
+    private static final String ARG_TYPE = "arg_type";
     private String type;
 
     public TopicsFragment() {
         // Required empty public constructor
     }
 
-    public TopicsFragment(String type) {
-        this.type = type;
+    public static TopicsFragment newInstance(String type) {
+        TopicsFragment fragment = new TopicsFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_TYPE, type);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    public String getType() {
+        // If 'type' is null, try to get it from arguments just in case
+        if (type == null && getArguments() != null) {
+            type = getArguments().getString("arg_type");
+        }
+        return type;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Retrieve the data from the Bundle
+        if (getArguments() != null) {
+            type = getArguments().getString(ARG_TYPE);
+        }
     }
 
     @Override
@@ -55,9 +77,12 @@ public class TopicsFragment extends Fragment {
         //Setup Tab Titles
         String[] tabTitles = new String[]{"Personal Questions", "Project Questions", "Video Clip Questions"};
 
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> tab.setText(tabTitles[position])
-        ).attach();
+        new TabLayoutMediator(tabLayout, viewPager, new TabLayoutMediator.TabConfigurationStrategy() {
+            @Override
+            public void onConfigureTab(@NonNull TabLayout.Tab tab, int position) {
+                tab.setText(tabTitles[position]);
+            }
+        }).attach();
 
         // if the user press back button, go to home
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {

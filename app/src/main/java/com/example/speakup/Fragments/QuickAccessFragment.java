@@ -91,7 +91,7 @@ public class QuickAccessFragment extends Fragment {
             btnPractice.setOnClickListener(v -> {
                 // 1. Switch the Fragment
                 getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new TopicsFragment("Practice Topics"))
+                        .replace(R.id.fragment_container, TopicsFragment.newInstance("Practice Topics"))
                         .commit();
 
                 // 2. Sync the Bottom Navigation Bar UI
@@ -115,7 +115,7 @@ public class QuickAccessFragment extends Fragment {
             btnPastRecordings.setOnClickListener(v -> {
                 // 1. Switch the Fragment
                 getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new TopicsFragment("Past Recordings"))
+                        .replace(R.id.fragment_container, TopicsFragment.newInstance("Past Recordings"))
                         .commit();
 
                 // 2. Sync the Bottom Navigation Bar UI
