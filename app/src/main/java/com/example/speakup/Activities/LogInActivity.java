@@ -118,15 +118,16 @@ public class LogInActivity extends Utilities {
 
                             if (task.isSuccessful()) {
                                 Log.i("LogInActivity", "signInWithEmailAndPassword:success");
-                                Intent intent = new Intent(LogInActivity.this, MasterActivity.class);
-                                startActivity(intent);
-
                                 SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
                                 SharedPreferences.Editor editor = settings.edit();
                                 editor.putBoolean("stayConnected", checkBox.isChecked());
                                 editor.commit();
 
                                 Toast.makeText(LogInActivity.this, "User logged in successfully", Toast.LENGTH_SHORT).show();
+
+                                Intent intent = new Intent(LogInActivity.this, MasterActivity.class);
+                                startActivity(intent);
+                                finish();
                             } else {
                                 Exception exp = task.getException();
 

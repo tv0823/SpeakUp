@@ -1,7 +1,14 @@
 package com.example.speakup;
 
+import static com.example.speakup.FBRef.refAuth;
+
+import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
@@ -11,9 +18,18 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.exifinterface.media.ExifInterface;
 
+import com.example.speakup.Activities.LogInActivity;
 import com.example.speakup.Activities.MasterActivity;
+import com.example.speakup.Activities.SignUpActivity;
+import com.example.speakup.Activities.WelcomeScreenActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Utilities extends AppCompatActivity {
 
@@ -29,7 +45,6 @@ public class Utilities extends AppCompatActivity {
     }
 
     @Override
-
     public void setContentView(int layoutResID) {
         super.setContentView(layoutResID);
         applyEdgeToEdgeLogic();
@@ -72,6 +87,19 @@ public class Utilities extends AppCompatActivity {
         // Registering starts the automatic monitoring
         IntentFilter networkFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkReceiver, networkFilter);
+
+        if (this instanceof WelcomeScreenActivity ||
+                this instanceof LogInActivity ||
+                this instanceof SignUpActivity) {
+            return;
+        }
+        // Check if user is logged in and redirect if not
+        if (refAuth.getCurrentUser() == null) {
+            Intent intent = new Intent(this, WelcomeScreenActivity.class);
+            startActivity(intent);
+            finish();
+        }
+
     }
 
     @Override
@@ -79,5 +107,79 @@ public class Utilities extends AppCompatActivity {
         super.onStop();
         // Crucial: Unregister to avoid leaking the Activity context
         unregisterReceiver(networkReceiver);
+    }
+
+    public static Bitmap getRotateBitmap(String photoPath, Bitmap bitmap) {
+        try {
+            ExifInterface ei = new ExifInterface(photoPath);
+            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED);
+
+            //Clockwise rotation
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    return rotateImage(bitmap, 90);
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    return rotateImage(bitmap, 180);
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    return rotateImage(bitmap, 270);
+                default:
+                    return bitmap;
+            }
+        } catch (IOException e) {
+            return bitmap;
+        }
+    }
+
+    // Overloaded method for Gallery Uris
+    public static Bitmap getRotateBitmap(Context context, Uri uri, Bitmap bitmap) {
+        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
+            if (input == null) return bitmap;
+
+            ExifInterface ei = new ExifInterface(input);
+            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED);
+
+            //Clockwise rotation
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    return rotateImage(bitmap, 90);
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    return rotateImage(bitmap, 180);
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    return rotateImage(bitmap, 270);
+                default:
+                    return bitmap;
+            }
+        } catch (IOException e) {
+            return bitmap;
+        }
+    }
+
+    public static Bitmap rotateImage(Bitmap source, float angle) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    public static void saveBitmapToFile(Bitmap bitmap, String filePath) {
+        File file = new File(filePath);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file);
+            // Compress the bitmap to the file
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (fos != null) {
+                    fos.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

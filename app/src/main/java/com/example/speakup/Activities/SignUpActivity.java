@@ -234,8 +234,8 @@ public class SignUpActivity extends Utilities {
      */
     private void uploadImage(Uri imageUri) {
         if (imageUri != null) {
-            String fileName = "profile.jpg";
-            StorageReference refFile = refUserProfiles.child(refAuth.getUid().toString() + "/" + fileName);
+            String fileName =  refAuth.getUid().toString() + ".jpg";
+            StorageReference refFile = refUserProfiles.child(fileName);
 
             refFile.putFile(imageUri)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {

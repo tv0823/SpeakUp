@@ -261,7 +261,7 @@ public class QuestionsGeneralFragment extends Fragment {
 
         cardView.setOnClickListener(v -> {
             Intent si = new Intent(getContext(), PracticeQuestionActivity.class);
-            si.putExtra("question", question); // Note: Ensure Question implements Serializable/Parcelable
+            si.putExtra("question", question);
             startActivity(si);
         });
 

@@ -51,6 +51,7 @@ public class WelcomeScreenActivity extends Utilities {
         if (refAuth.getCurrentUser() != null && isChecked) {
             Intent intent = new Intent(this, MasterActivity.class);
             startActivity(intent);
+            finish();
         }
     }
 
