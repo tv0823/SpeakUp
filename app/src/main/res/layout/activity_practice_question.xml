@@ -14,14 +14,14 @@
         android:layout_weight="8"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" />
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="5" />
         <ImageButton
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="12"
+            android:layout_weight="10"
             android:background="@android:color/transparent"
             android:onClick="goBack"
-            android:padding="6dp"
+            android:padding="8dp"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/arrow_back" />
         <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="15" />
@@ -29,12 +29,12 @@
             android:id="@+id/subTopicTitleTv"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="42"
+            android:layout_weight="40"
             android:gravity="center"
             android:textColor="#000000"
             android:textSize="18sp"
             android:textStyle="bold" />
-        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="29" />
+        <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="30" />
     </LinearLayout>
 
     <LinearLayout

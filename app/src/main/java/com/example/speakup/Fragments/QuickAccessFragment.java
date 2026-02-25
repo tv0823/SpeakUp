@@ -88,49 +88,61 @@ public class QuickAccessFragment extends Fragment {
     private void setupNavigationButtons(View view) {
         MaterialButton btnPractice = view.findViewById(R.id.btnPracticeQuestions);
         if (btnPractice != null) {
-            btnPractice.setOnClickListener(v -> {
-                // 1. Switch the Fragment
-                getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, TopicsFragment.newInstance("Practice Topics"))
-                        .commit();
+            btnPractice.setOnClickListener( new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    // 1. Switch the Fragment
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, TopicsFragment.newInstance("Practice Topics"))
+                            .commit();
 
-                // 2. Sync the Bottom Navigation Bar UI
-                if (getActivity() instanceof MasterActivity) {
-                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
-                    nav.setSelectedItemId(R.id.nav_practice);
+                    // 2. Sync the Bottom Navigation Bar UI
+                    if (getActivity() instanceof MasterActivity) {
+                        BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                        nav.setSelectedItemId(R.id.nav_practice);
+                    }
                 }
             });
         }
         
         MaterialButton btnSimulations = view.findViewById(R.id.btnSimulations);
         if (btnSimulations != null) {
-            btnSimulations.setOnClickListener(v -> {
-                Intent intent = new Intent(getActivity(), SimulationsActivity.class);
-                startActivity(intent);
+            btnSimulations.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(getActivity(), SimulationsActivity.class);
+                    startActivity(intent);
+                }
             });
         }
 
         MaterialButton btnPastRecordings = view.findViewById(R.id.btnPastRecordings);
         if (btnPastRecordings != null) {
-            btnPastRecordings.setOnClickListener(v -> {
-                // 1. Switch the Fragment
-                getParentFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, TopicsFragment.newInstance("Past Recordings"))
-                        .commit();
+            btnPastRecordings.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    // 1. Switch the Fragment
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, TopicsFragment.newInstance("Past Recordings"))
+                            .commit();
 
-                // 2. Sync the Bottom Navigation Bar UI
-                if (getActivity() instanceof MasterActivity) {
-                    BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
-                    nav.setSelectedItemId(R.id.nav_recordings);
+                    // 2. Sync the Bottom Navigation Bar UI
+                    if (getActivity() instanceof MasterActivity) {
+                        BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                        nav.setSelectedItemId(R.id.nav_recordings);
+                    }
                 }
             });
         }
 
         MaterialButton btnReminders = view.findViewById(R.id.btnReminders);
         if (btnReminders != null) {
-            btnReminders.setOnClickListener(v -> {
-                Intent intent = new Intent(getActivity(), RemindersActivity.class);
-                startActivity(intent);
+            btnReminders.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(getActivity(), RemindersActivity.class);
+                    startActivity(intent);
+                }
             });
         }
     }

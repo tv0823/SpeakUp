@@ -39,6 +39,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.speakup.Activities.HelpAndAboutActivity;
+import com.example.speakup.Activities.RemindersActivity;
 import com.example.speakup.Activities.WelcomeScreenActivity;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.User;
@@ -93,6 +94,7 @@ public class ProfileFragment extends Fragment {
         MaterialButton btnHelpAndAbout = view.findViewById(R.id.btnHelp);
         MaterialButton btnLogout = view.findViewById(R.id.btnLogout);
         MaterialButton btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        MaterialButton btnReminders = view.findViewById(R.id.btnReminders);
         ShapeableImageView profileImage = view.findViewById(R.id.profileImage);
 
         uid = refAuth.getCurrentUser().getUid();
@@ -122,6 +124,13 @@ public class ProfileFragment extends Fragment {
             }
         });
 
+        btnReminders.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(requireActivity(), RemindersActivity.class);
+                startActivity(intent);
+            }
+        });
 
         return view;
     }
