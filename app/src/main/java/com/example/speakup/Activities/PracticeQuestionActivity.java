@@ -10,6 +10,7 @@ import static com.example.speakup.Prompts.VIDEO_CLIPS_PROMPT;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -22,6 +23,7 @@ import android.os.Handler;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -84,7 +86,7 @@ public class PracticeQuestionActivity extends Utilities {
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
     // UI Components
-    private TextView subTopicTitleTv, keyPointsTv, currentTimeTv, totalTimeTv, recordedTimeTv;
+    private TextView subTopicTitleTv, currentTimeTv, totalTimeTv, recordedTimeTv;
     private SeekBar ttsSeekBar, recordingSeekBar;
     private ImageButton playPauseBtn, recordBtn, playRecordingBtn, deleteRecordingBtn;
     private FrameLayout linesContainer;
@@ -109,6 +111,8 @@ public class PracticeQuestionActivity extends Utilities {
     private String finalFileName;
     private ArrayList<File> audioChunks = new ArrayList<>();
     private int chunkCount = 0;
+
+    private Button playButton;
 
     private GeminiManager geminiManager;
     private AlertDialog.Builder adb;
@@ -182,7 +186,6 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void initViews() {
         subTopicTitleTv = findViewById(R.id.subTopicTitleTv);
-        keyPointsTv = findViewById(R.id.keyPointsTv);
         currentTimeTv = findViewById(R.id.currentTimeTv);
         totalTimeTv = findViewById(R.id.totalTimeTv);
         recordedTimeTv = findViewById(R.id.recordedTimeTv);
@@ -193,6 +196,16 @@ public class PracticeQuestionActivity extends Utilities {
         playRecordingBtn = findViewById(R.id.playRecordingBtn);
         deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
         linesContainer = findViewById(R.id.linesContainer);
+        playButton = findViewById(R.id.btn_play_video);
+
+        playButton.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View view) {
+              if (question != null && question.getVideoUrl() != null) {
+                  setupYouTubePlayer(question.getVideoUrl());
+              }
+          }
+        });
 
         //Only scrollable when not recording
         recordingSeekBar.setOnTouchListener((v, event) -> isRecording);
@@ -580,11 +593,25 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void setupUIWithQuestionData() {
         subTopicTitleTv.setText(question.getSubTopic().equals("null") ? question.getTopic() : question.getSubTopic());
-        keyPointsTv.setText(question.getBriefQuestion().replace("\\n", "\n"));
+
+        // Always prepare the TTS Seekbar
         totalSeconds = Math.max(question.getFullQuestion().length() / 15, 1);
         maxProgress = totalSeconds * 10;
         ttsSeekBar.setMax(maxProgress);
         updateTimeLabels();
+
+        // VIDEO LOGIC
+        if ("Video Clip Questions".equals(question.getCategory())
+                && question.getVideoUrl() != null
+                && !question.getVideoUrl().equals("null")
+                && !question.getVideoUrl().isEmpty()) {
+
+            playButton.setVisibility(View.VISIBLE);
+            findViewById(R.id.videoAudioSpace).setVisibility(View.VISIBLE);
+        } else {
+            playButton.setVisibility(View.GONE);
+            findViewById(R.id.videoAudioSpace).setVisibility(View.GONE);
+        }
     }
 
     /**
@@ -787,7 +814,7 @@ public class PracticeQuestionActivity extends Utilities {
     /**
      * Generates a final title for the recording and initiates the upload process.
      *
-     * @param displayTitle The user-provided title (may be empty).
+     * @param displayTitle The user-provided title (maybe empty).
      * @param feedback The parsed AI feedback map.
      * @param score The total score given by the AI.
      */
@@ -857,6 +884,58 @@ public class PracticeQuestionActivity extends Utilities {
                 Toast.makeText(PracticeQuestionActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void setupYouTubePlayer(String videoUrl) {
+        String videoId = extractVideoId(videoUrl);
+
+        if (videoId == null || videoId.isEmpty()) {
+            Log.e("YouTubeDebug", "Could not find Video ID for URL: " + videoUrl);
+            Toast.makeText(this, "Invalid Video Link", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Intent for the YouTube App (using the 'vnd' protocol)
+        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + videoId));
+
+        // 2. Intent for the Web Browser (Fallback)
+        Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.youtube.com/watch?v=" + videoId));
+
+        try {
+            // Try opening the YouTube app first
+            startActivity(appIntent);
+        } catch (ActivityNotFoundException ex) {
+            // If YouTube app isn't installed, open in Browser
+            startActivity(webIntent);
+        }
+    }
+
+    /**
+     * Extracts the 11-character ID from any YouTube URL
+     */
+    private String extractVideoId(String videoUrl) {
+        if (videoUrl == null || videoUrl.trim().isEmpty()) return "";
+
+        String videoId = "";
+        // Handle https://www.youtube.com/watch?v=VIDEO_ID
+        if (videoUrl.contains("v=")) {
+            videoId = videoUrl.split("v=")[1].split("&")[0];
+        }
+        // Handle https://youtu.be/VIDEO_ID
+        else if (videoUrl.contains("youtu.be/")) {
+            videoId = videoUrl.split("youtu.be/")[1].split("\\?")[0];
+        }
+        // Handle https://www.youtube.com/embed/VIDEO_ID
+        else if (videoUrl.contains("embed/")) {
+            videoId = videoUrl.split("embed/")[1].split("\\?")[0];
+        }
+        // If it's already an 11-char ID
+        else if (videoUrl.length() == 11) {
+            videoId = videoUrl;
+        }
+
+        return videoId.trim();
     }
 
     /**

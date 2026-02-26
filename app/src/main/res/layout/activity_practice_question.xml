@@ -10,15 +10,13 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="8"
+        android:layout_height="60dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
         <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="5" />
         <ImageButton
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="10"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="@android:color/transparent"
             android:onClick="goBack"
             android:padding="8dp"
@@ -28,7 +26,7 @@
         <TextView
             android:id="@+id/subTopicTitleTv"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="40"
             android:gravity="center"
             android:textColor="#000000"
@@ -39,8 +37,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="92"
+        android:layout_height="match_parent"
         android:orientation="horizontal">
 
         <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="5" />
@@ -59,21 +56,35 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <Space android:layout_width="match_parent" android:layout_height="8dp" />
+            <Space android:layout_width="match_parent" android:layout_height="4dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Listen to the question and record your answer"
+                android:text="Review the material and record your answer"
                 android:textColor="#333333"
                 android:textSize="14sp" />
 
-            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="3" />
+            <Space android:layout_width="match_parent" android:layout_height="16dp" />
+
+            <Button
+                android:id="@+id/btn_play_video"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Watch Video Tutorial"
+                android:drawableStart="@android:drawable/ic_media_play"
+                android:backgroundTint="#FF0000" />
+
+            <Space
+                android:id="@+id/videoAudioSpace"
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:visibility="gone" />
 
             <LinearLayout
+                android:id="@+id/audioPlaybackLayout"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="18"
+                android:layout_height="wrap_content"
                 android:background="@drawable/playback_layout_border"
                 android:backgroundTint="#F1F3F4"
                 android:orientation="vertical"
@@ -120,7 +131,8 @@
                 <SeekBar
                     android:id="@+id/ttsSeekBar"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -141,33 +153,10 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="3" />
-
-            <LinearLayout
+            <Space
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="22"
-                android:background="@drawable/layout_border"
-                android:orientation="vertical"
-                android:padding="12dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Key Points"
-                    android:textColor="#000000"
-                    android:textStyle="bold" />
-                <Space android:layout_width="match_parent" android:layout_height="8dp" />
-                <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-                    <TextView
-                        android:id="@+id/keyPointsTv"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:lineSpacingExtra="4dp"
-                        android:text="• Loading..." />
-                </ScrollView>
-            </LinearLayout>
-
-            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="4" />
+                android:layout_weight="1" />
 
             <LinearLayout
                 android:id="@+id/pillRecorderContainer"
@@ -262,7 +251,7 @@
                 android:text="Check Recording"
                 android:textAllCaps="false" />
 
-            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="3" />
+            <Space android:layout_width="match_parent" android:layout_height="24dp" />
         </LinearLayout>
 
         <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="5" />

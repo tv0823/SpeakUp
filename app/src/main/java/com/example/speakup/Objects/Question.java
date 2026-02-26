@@ -41,11 +41,6 @@ public class Question implements Serializable {
     private String fullQuestion;
 
     /**
-     * A brief summary or key points of the question.
-     */
-    private String briefQuestion;
-
-    /**
      * The URL of the associated video clip, if applicable.
      * Defaults to "null" if not a video clip question.
      */
@@ -58,15 +53,13 @@ public class Question implements Serializable {
      * @param topic         The main topic.
      * @param subTopic      The sub-topic.
      * @param fullQuestion  The full text of the question.
-     * @param briefQuestion A brief summary of the question.
      * @param videoUrl      The URL of the video (used only if category is "Video Clip Questions").
      */
-    public Question(String category, String topic, String subTopic, String fullQuestion, String briefQuestion, String videoUrl) {
+    public Question(String category, String topic, String subTopic, String fullQuestion, String videoUrl) {
         this.category = category;
         this.topic = topic;
         this.subTopic = subTopic;
         this.fullQuestion = fullQuestion;
-        this.briefQuestion = briefQuestion;
         if (this.category.equals("Video Clip Questions")) {
             this.videoUrl = videoUrl;
         } else {
@@ -126,15 +119,6 @@ public class Question implements Serializable {
      */
     public String getFullQuestion() {
         return fullQuestion;
-    }
-
-    /**
-     * Gets the brief summary of the question.
-     *
-     * @return The brief question summary.
-     */
-    public String getBriefQuestion() {
-        return briefQuestion;
     }
 
     /**
