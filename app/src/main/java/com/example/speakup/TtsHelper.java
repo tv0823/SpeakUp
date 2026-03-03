@@ -37,19 +37,22 @@ public class TtsHelper {
      *
      * @param context The {@link Context} used to initialize the engine and display status messages.
      */
-    public TtsHelper(Context context) {
-        tts = new TextToSpeech(context, status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                int result = tts.setLanguage(Locale.US);
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Toast.makeText(context, "Language not supported", Toast.LENGTH_SHORT).show();
+    public TtsHelper(final Context context) {
+        tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    int result = tts.setLanguage(Locale.US);
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Toast.makeText(context, "Language not supported", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Set a natural speaking rate
+                        tts.setSpeechRate(0.7f);
+                        isInitialized = true;
+                    }
                 } else {
-                    // Set a natural speaking rate
-                    tts.setSpeechRate(0.7f);
-                    isInitialized = true;
+                    Toast.makeText(context, "TTS initialization failed", Toast.LENGTH_SHORT).show();
                 }
-            } else {
-                Toast.makeText(context, "TTS initialization failed", Toast.LENGTH_SHORT).show();
             }
         });
     }

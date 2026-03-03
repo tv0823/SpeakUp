@@ -1,10 +1,280 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
     tools:context=".Activities.SimulationsActivity">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/timerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FEE2E2"
+        android:gravity="center"
+        android:padding="8dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+        <TextView
+            android:id="@+id/tvTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30:00"
+            android:textColor="#B91C1C"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/introCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="English Mock Exam"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="This simulation consists of 4 parts. You have 30 minutes to complete all recordings and submit them for AI analysis."
+                        android:textColor="#4A5568" />
+                    <Button
+                        android:id="@+id/btnStartSim"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Start Simulation"
+                        android:backgroundTint="#13A4EC" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:id="@+id/questionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/questionTitleTv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:text="Question 1/4: Personal Questions"
+                    android:textColor="#000000"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/questionTextTv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    tools:text="Talk about a hobby you enjoy and explain why it is important to you."
+                    android:textColor="#333333"
+                    android:textSize="16sp" />
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp" />
+
+                <Button
+                    android:id="@+id/btn_play_video"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Watch Video"
+                    android:drawableStart="@android:drawable/ic_media_play"
+                    android:backgroundTint="#FF0000"
+                    android:visibility="gone" />
+
+                <Space android:layout_width="match_parent" android:layout_height="16dp" />
+
+                <LinearLayout
+                    android:id="@+id/audioPlaybackLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/playback_layout_border"
+                    android:backgroundTint="#F1F3F4"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="#FDEBD0"
+                            android:padding="8dp"
+                            android:src="@android:drawable/ic_menu_gallery" />
+                        <Space android:layout_width="12dp" android:layout_height="wrap_content" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Question Playback"
+                                android:textColor="#000000"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/playbackSubTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                tools:text="Hobbies"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                        <ImageButton
+                            android:id="@+id/playPauseBtn"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@android:color/transparent"
+                            android:src="@android:drawable/ic_media_play"
+                            app:tint="#13A4EC" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/ttsSeekBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:id="@+id/currentTimeTv"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="00:00"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:id="@+id/totalTimeTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+                <LinearLayout
+                    android:id="@+id/pillRecorderContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="@drawable/pill_background"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/recordBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_btn_speak_now"
+                        app:tint="#4A5568" />
+
+                    <ImageButton
+                        android:id="@+id/playRecordingBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="#4A5568" />
+
+                    <FrameLayout
+                        android:id="@+id/barContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1">
+                        <SeekBar
+                            android:id="@+id/recordingSeekBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:progressDrawable="@drawable/custom_recording_seekbar"
+                            android:thumb="@android:color/transparent" />
+                        <FrameLayout
+                            android:id="@+id/linesContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/recordedTimeTv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="00:00"
+                        android:textColor="#4A5568"
+                        android:textSize="14sp" />
+
+                    <ImageButton
+                        android:id="@+id/deleteRecordingBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_menu_delete"
+                        app:tint="#4A5568" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/btnPrevious"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Previous"
+                        android:backgroundTint="#9CA3AF" />
+                    <Space android:layout_width="12dp" android:layout_height="wrap_content" />
+                    <Button
+                        android:id="@+id/btnNext"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Next"
+                        android:backgroundTint="#13A4EC" />
+                    <Button
+                        android:id="@+id/btnFinishSim"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Finish Simulation"
+                        android:backgroundTint="#10B981"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
