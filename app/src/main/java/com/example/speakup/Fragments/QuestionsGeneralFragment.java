@@ -3,6 +3,7 @@ package com.example.speakup.Fragments;
 import static com.example.speakup.FBRef.refQuestionMedia;
 import static com.example.speakup.FBRef.refQuestions;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -68,6 +69,8 @@ public class QuestionsGeneralFragment extends Fragment {
      */
     private ArrayList<Question> allQuestionsList;
 
+    private ProgressDialog pD;
+
     /**
      * Default constructor.
      * Required for Fragment instantiation.
@@ -123,6 +126,11 @@ public class QuestionsGeneralFragment extends Fragment {
         columnRight = view.findViewById(R.id.columnRight);
         spinnerTopics = view.findViewById(R.id.spinnerTopics);
 
+        pD = new ProgressDialog(getContext());
+        pD.setMessage("Loading questions...");
+        pD.setCancelable(false);
+        pD.show();
+
         allQuestionsList = new ArrayList<>();
 
         fetchTopicsFromFirebase();
@@ -137,15 +145,21 @@ public class QuestionsGeneralFragment extends Fragment {
      * </p>
      */
     private void fetchTopicsFromFirebase() {
-        if (categoryPath == null) return;
+        if (categoryPath == null) {
+            if (pD != null) pD.dismiss();
+            return;
+        }
 
         refQuestions.child(categoryPath).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dS) {
-                if (!dS.exists() || !dS.hasChildren()) {
-                    if (isVisible()) {
-                        Toast.makeText(getContext(), "No available questions for " + categoryPath, Toast.LENGTH_LONG).show();
-                    }
+                // Dismiss the dialog as soon as data arrives
+                if (pD != null && pD.isShowing()) {
+                    pD.dismiss();
+                }
+
+                if (!dS.exists()) {
+                    Toast.makeText(getContext(), "No questions found", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -169,10 +183,14 @@ public class QuestionsGeneralFragment extends Fragment {
                 }
 
                 setupSpinner(uniqueTopicsList);
+
+                // Manually trigger the display so it doesn't wait for a Spinner click
+                filterAndDisplay("All Topics");
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError dbError) {
+                if (pD != null) pD.dismiss();
                 Log.e("Firebase", "Error: " + dbError.getMessage());
             }
         });
@@ -257,7 +275,7 @@ public class QuestionsGeneralFragment extends Fragment {
             textView.setText(question.getTopic());
         }
 
-        loadTopicImage(imageView, question.getQuestionId());
+        loadTopicImage(imageView, question.getSubTopic().split(" Set")[0].replace(' ', '_').toLowerCase());
 
         cardView.setOnClickListener(v -> {
             Intent si = new Intent(getContext(), PracticeQuestionActivity.class);

@@ -5,6 +5,7 @@ import static com.example.speakup.FBRef.refQuestionMedia;
 import static com.example.speakup.FBRef.refQuestions;
 import static com.example.speakup.FBRef.refRecordings;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -91,6 +92,8 @@ public class RecordingsGeneralFragment extends Fragment {
      */
     private boolean isAscending = false;
 
+    private ProgressDialog pD;
+
     /**
      * Required empty public constructor for fragment instantiation.
      */
@@ -141,6 +144,11 @@ public class RecordingsGeneralFragment extends Fragment {
         columnRight = view.findViewById(R.id.columnRight);
         toggleGroup = view.findViewById(R.id.toggleGroup);
         btnSortDirection = view.findViewById(R.id.btnSortDirection);
+
+        pD = new ProgressDialog(getContext());
+        pD.setMessage("Loading recordings...");
+        pD.setCancelable(false);
+        pD.show();
 
         allRecordingsList = new ArrayList<>();
 
@@ -201,11 +209,21 @@ public class RecordingsGeneralFragment extends Fragment {
      * </p>
      */
     private void fetchRecordingsFromFirebase() {
-        if (categoryPath == null || currentUserId == null) return;
+        if (categoryPath == null || currentUserId == null) {
+            if (pD != null) pD.dismiss(); // Dismiss if we can't even start
+            return;
+        }
 
         refRecordings.child(currentUserId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot userSnapshot) {
+                // Dismiss If the user has no recordings at all
+                if (!userSnapshot.exists() || !userSnapshot.hasChildren()) {
+                    if (pD != null) pD.dismiss();
+                    Toast.makeText(getContext(), "No recordings found", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 allRecordingsList.clear();
 
                 for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
@@ -214,6 +232,8 @@ public class RecordingsGeneralFragment extends Fragment {
                     refQuestions.child(categoryPath).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot catSnapshot) {
+                            if (pD != null && pD.isShowing()) pD.dismiss();
+
                             boolean belongsToCategory = false;
                             for (DataSnapshot topicSnapshot : catSnapshot.getChildren()) {
                                 if (topicSnapshot.hasChild(qId)) {
@@ -233,12 +253,16 @@ public class RecordingsGeneralFragment extends Fragment {
                             }
                         }
                         @Override
-                        public void onCancelled(@NonNull DatabaseError error) {}
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            if (pD != null) pD.dismiss(); // Dismiss on error
+                        }
                     });
                 }
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (pD != null) pD.dismiss(); // Dismiss on error
+            }
         });
     }
 
