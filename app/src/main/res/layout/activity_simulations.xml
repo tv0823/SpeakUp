@@ -89,15 +89,6 @@
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/questionTextTv"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    tools:text="Talk about a hobby you enjoy and explain why it is important to you."
-                    android:textColor="#333333"
-                    android:textSize="16sp" />
-
                 <Space android:layout_width="match_parent" android:layout_height="16dp" />
 
                 <Button
@@ -108,8 +99,6 @@
                     android:drawableStart="@android:drawable/ic_media_play"
                     android:backgroundTint="#FF0000"
                     android:visibility="gone" />
-
-                <Space android:layout_width="match_parent" android:layout_height="16dp" />
 
                 <LinearLayout
                     android:id="@+id/audioPlaybackLayout"

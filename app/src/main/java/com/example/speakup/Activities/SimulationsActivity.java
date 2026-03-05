@@ -53,7 +53,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     private View introCard;
     private LinearLayout questionsContainer, timerLayout;
     private Button btnNext, btnPrevious, btnFinishSim, btnPlayVideo;
-    private TextView tvTimer, questionTitleTv, questionTextTv, currentTimeTv, totalTimeTv, recordedTimeTv, playbackSubTitle;
+    private TextView tvTimer, questionTitleTv, currentTimeTv, totalTimeTv, recordedTimeTv, playbackSubTitle;
     private SeekBar ttsSeekBar, recordingSeekBar;
     private ImageButton playPauseBtn, recordBtn, playRecordingBtn;
     private FrameLayout linesContainer;
@@ -94,7 +94,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         btnPlayVideo = findViewById(R.id.btn_play_video);
         tvTimer = findViewById(R.id.tvTimer);
         questionTitleTv = findViewById(R.id.questionTitleTv);
-        questionTextTv = findViewById(R.id.questionTextTv);
         currentTimeTv = findViewById(R.id.currentTimeTv);
         totalTimeTv = findViewById(R.id.totalTimeTv);
         recordedTimeTv = findViewById(R.id.recordedTimeTv);
@@ -172,93 +171,84 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         refQuestions.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ArrayList<Question> personalList = new ArrayList<Question>();
-                ArrayList<Question> projectList = new ArrayList<Question>();
-                
-                ArrayList<String> videoUrls = new ArrayList<String>();
-                ArrayList<ArrayList<Question>> videoGroups = new ArrayList<ArrayList<Question>>();
+                ArrayList<Question> personalList = new ArrayList<>();
+                ArrayList<Question> projectList = new ArrayList<>();
+                ArrayList<ArrayList<Question>> videoGroups = new ArrayList<>();
+                ArrayList<String> videoUrls = new ArrayList<>();
 
+                // 1. Traverse the 3-level tree
                 for (DataSnapshot categorySnap : snapshot.getChildren()) {
                     String category = categorySnap.getKey();
-                    for (DataSnapshot topicSnap : categorySnap.getChildren()) {
-                        for (DataSnapshot subTopicSnap : topicSnap.getChildren()) {
-                            for (DataSnapshot questionSnap : subTopicSnap.getChildren()) {
-                                Question q = questionSnap.getValue(Question.class);
-                                if (q == null) continue;
+                    Log.d("SIM_DEBUG", "Checking category: " + category); // Check Logcat!
 
-                                if ("Personal Questions".equals(category)) {
-                                    personalList.add(q);
-                                } else if ("Project Presentation".equals(category)) {
-                                    projectList.add(q);
-                                } else if ("Video Clip Questions".equals(category)) {
-                                    String videoUrl = q.getVideoUrl();
-                                    if (videoUrl != null && !videoUrl.equals("null") && !videoUrl.isEmpty()) {
-                                        int foundIndex = -1;
-                                        for (int i = 0; i < videoUrls.size(); i++) {
-                                            if (videoUrls.get(i).equals(videoUrl)) {
-                                                foundIndex = i;
-                                                break;
-                                            }
-                                        }
-                                        
-                                        if (foundIndex == -1) {
-                                            videoUrls.add(videoUrl);
-                                            ArrayList<Question> newList = new ArrayList<Question>();
-                                            newList.add(q);
-                                            videoGroups.add(newList);
-                                        } else {
-                                            videoGroups.get(foundIndex).add(q);
-                                        }
-                                    }
-                                }
+                    for (DataSnapshot topicSnap : categorySnap.getChildren()) {
+                        for (DataSnapshot questionSnap : topicSnap.getChildren()) {
+
+                            // Safety: Skip if it's a metadata string instead of an object
+                            if (questionSnap.getValue() instanceof String) continue;
+
+                            Question q = questionSnap.getValue(Question.class);
+                            if (q == null || q.getQuestionId() == null) continue;
+
+                            // 2. Sort into lists (Use .trim().equalsIgnoreCase for safety)
+                            String catSafe = (category != null) ? category.trim() : "";
+
+                            if (catSafe.equalsIgnoreCase("Personal Questions")) {
+                                personalList.add(q);
+                            } else if (catSafe.equalsIgnoreCase("Project Questions")) {
+                                projectList.add(q);
+                            } else if (catSafe.equalsIgnoreCase("Video Clip Questions")) {
+                                groupVideoQuestions(q, videoUrls, videoGroups);
                             }
                         }
                     }
                 }
 
+                // LOG THE RESULTS
+                Log.d("SIM_DEBUG", "Personal: " + personalList.size());
+                Log.d("SIM_DEBUG", "Project: " + projectList.size());
+                Log.d("SIM_DEBUG", "Video Groups: " + videoGroups.size());
+
+                // 3. Random Selection Logic
                 Random random = new Random();
+                questions.clear();
 
                 // Pick 1 Personal
-                if (personalList.size() > 0) {
+                if (!personalList.isEmpty()) {
                     questions.add(personalList.get(random.nextInt(personalList.size())));
                 }
 
                 // Pick 1 Project
-                if (projectList.size() > 0) {
+                if (!projectList.isEmpty()) {
                     questions.add(projectList.get(random.nextInt(projectList.size())));
                 }
 
-                // Pick 1 video with at least 2 questions
-                ArrayList<Integer> eligibleIndices = new ArrayList<Integer>();
-                for (int i = 0; i < videoGroups.size(); i++) {
-                    if (videoGroups.get(i).size() >= 2) {
-                        eligibleIndices.add(i);
-                    }
+                // Pick 1 Video Group (and 2 questions from it)
+                ArrayList<Question> allVideoQs = new ArrayList<>();
+                ArrayList<ArrayList<Question>> eligibleGroups = new ArrayList<>();
+
+                for (ArrayList<Question> group : videoGroups) {
+                    if (group.size() >= 2) eligibleGroups.add(group);
+                    allVideoQs.addAll(group);
                 }
 
-                if (eligibleIndices.size() > 0) {
-                    int chosenGroupIndex = eligibleIndices.get(random.nextInt(eligibleIndices.size()));
-                    ArrayList<Question> videoQs = videoGroups.get(chosenGroupIndex);
-                    
-                    int idx1 = random.nextInt(videoQs.size());
-                    int idx2 = random.nextInt(videoQs.size());
-                    while (idx1 == idx2) {
-                        idx2 = random.nextInt(videoQs.size());
-                    }
-                    questions.add(videoQs.get(idx1));
-                    questions.add(videoQs.get(idx2));
+                if (!eligibleGroups.isEmpty()) {
+                    // Ideally pick 2 from the same video
+                    ArrayList<Question> chosen = eligibleGroups.get(random.nextInt(eligibleGroups.size()));
+                    questions.add(chosen.get(0));
+                    questions.add(chosen.get(1));
                 }
 
                 pd.dismiss();
 
+                // 4. Final Validation
                 if (questions.size() < 4) {
-                    Toast.makeText(SimulationsActivity.this, "Not enough questions in database to start simulation", Toast.LENGTH_LONG).show();
+                    Toast.makeText(SimulationsActivity.this,
+                            "Simulation requires 1 Personal, 1 Project, and 2 Video questions.",
+                            Toast.LENGTH_LONG).show();
                     finish();
                 } else {
-                    for (int i = 0; i < questions.size(); i++) {
-                        Question q = questions.get(i);
-                        recordingManagers.add(new RecordingManager(SimulationsActivity.this, "SIM_" + q.getQuestionId() + "_rec.aac"));
-                    }
+                    setupRecordingManagers();
                     startSimulationFlow();
                 }
             }
@@ -266,9 +256,35 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 pd.dismiss();
-                Toast.makeText(SimulationsActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("Firebase", error.getMessage());
             }
         });
+    }
+
+    private void groupVideoQuestions(Question q, ArrayList<String> videoUrls, ArrayList<ArrayList<Question>> videoGroups) {
+        String url = q.getVideoUrl();
+        if (url == null || url.isEmpty() || url.equals("null")) return;
+
+        int index = videoUrls.indexOf(url);
+        if (index == -1) {
+            videoUrls.add(url);
+            ArrayList<Question> newList = new ArrayList<>();
+            newList.add(q);
+            videoGroups.add(newList);
+        } else {
+            videoGroups.get(index).add(q);
+        }
+    }
+
+    private void setupRecordingManagers() {
+        // Release old ones first to prevent memory leaks/file locks
+        for (RecordingManager rm : recordingManagers) {
+            rm.release();
+        }
+        recordingManagers.clear();
+        for (Question q : questions) {
+            recordingManagers.add(new RecordingManager(this, "SIM_" + q.getQuestionId() + ".aac"));
+        }
     }
 
     @Override
@@ -335,7 +351,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         currentRecordingManager = recordingManagers.get(index);
 
         questionTitleTv.setText(String.format(Locale.getDefault(), "Question %d/%d: %s", index + 1, questions.size(), q.getCategory()));
-        questionTextTv.setText(q.getFullQuestion());
         playbackSubTitle.setText(q.getSubTopic());
 
         totalSeconds = Math.max(q.getFullQuestion().length() / 15, 1);
