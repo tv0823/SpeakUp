@@ -55,6 +55,9 @@
             android:name=".Activities.SimulationsActivity"
             android:exported="false" />
         <activity
+            android:name=".Activities.SimulationResultsActivity"
+            android:exported="false" />
+        <activity
             android:name=".Activities.LogInActivity"
             android:exported="false" />
         <activity

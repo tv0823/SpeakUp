@@ -100,4 +100,34 @@ public class GeminiManager {
                     }
                 });
     }
+
+    public void sendTextWithFilesPrompt(String prompt, ArrayList<byte[]> filesBytes, ArrayList<String> mimeType, GeminiCallback callback) {
+        List<Part> parts = new ArrayList<>();
+        parts.add(new TextPart(prompt));
+        for (int i = 0; i < filesBytes.size(); i++) {
+            parts.add(new BlobPart(mimeType.get(i), filesBytes.get(i)));
+        }
+
+        Content[] content = new Content[1];
+        content[0] = new Content(parts);
+
+        gemini.generateContent(content,
+                new Continuation<GenerateContentResponse>() {
+                    @NonNull
+                    @Override
+                    public CoroutineContext getContext() {
+                        return EmptyCoroutineContext.INSTANCE;
+                    }
+
+                    @Override
+                    public void resumeWith(@NonNull Object result) {
+                        if (result instanceof Result.Failure) {
+                            Log.i("GeminiManager", "Error: " + ((Result.Failure) result).exception.getMessage());
+                            callback.onFailure(((Result.Failure) result).exception);
+                        } else {
+                            callback.onSuccess(((GenerateContentResponse) result).getText());
+                        }
+                    }
+                });
+    }
 }

@@ -26,6 +26,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.speakup.Activities.ResultsActivity;
+import com.example.speakup.Objects.Question;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.R;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -35,6 +36,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A fragment that displays a sortable grid of recordings for a specific category.
@@ -95,6 +98,12 @@ public class RecordingsGeneralFragment extends Fragment {
     private ProgressDialog pD;
 
     /**
+     * Maps Firebase questionId -> normalized image key used in Firebase Storage (e.g., from subTopic name).
+     * This is needed because your stored images are named by topic/subTopic, not by questionId.
+     */
+    private Map<String, String> questionIdToImageKey;
+
+    /**
      * Required empty public constructor for fragment instantiation.
      */
     public RecordingsGeneralFragment() {
@@ -151,6 +160,7 @@ public class RecordingsGeneralFragment extends Fragment {
         pD.show();
 
         allRecordingsList = new ArrayList<>();
+        questionIdToImageKey = new HashMap<>();
 
         if (refAuth.getCurrentUser() != null) {
             currentUserId = refAuth.getCurrentUser().getUid();
@@ -202,7 +212,7 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Fetches recording data from Firebase Realtime Database.
      * <p>
-     * It performs a multi-step fetch:
+     * It performs a multistep fetch:
      * 1. Listens for all recordings of the current user.
      * 2. For each question that has recordings, checks if that question belongs to the current {@link #categoryPath}.
      * 3. Aggregates all valid recordings into {@link #allRecordingsList} and triggers a UI update.
@@ -238,6 +248,19 @@ public class RecordingsGeneralFragment extends Fragment {
                             for (DataSnapshot topicSnapshot : catSnapshot.getChildren()) {
                                 if (topicSnapshot.hasChild(qId)) {
                                     belongsToCategory = true;
+
+                                    // Fetch question object so we can build the image name from subTopic (not questionId).
+                                    Question q = topicSnapshot.child(qId).getValue(Question.class);
+                                    if (q != null) {
+                                        String sub = q.getSubTopic();
+                                        if (sub == null || "null".equals(sub)) sub = q.getTopic();
+                                        if (sub != null) {
+                                            String imageKey = sub.split(" Set")[0]
+                                                    .replace(' ', '_')
+                                                    .toLowerCase();
+                                            questionIdToImageKey.put(qId, imageKey);
+                                        }
+                                    }
                                     break;
                                 }
                             }
@@ -347,7 +370,9 @@ public class RecordingsGeneralFragment extends Fragment {
         ImageView imageView = cardView.findViewById(R.id.topicImageView);
 
         titleText.setText(recording.getDisplayTitle() + "\nScore: " + recording.getScore());
-        loadTopicImage(imageView, recording.getQuestionId());
+        String imageKey = (questionIdToImageKey != null) ? questionIdToImageKey.get(recording.getQuestionId()) : null;
+        // Fallback to questionId if we couldn't determine image key.
+        loadTopicImage(imageView, (imageKey != null) ? imageKey : recording.getQuestionId());
 
         cardView.setOnClickListener(view -> {
             Intent si = new Intent(getContext(), ResultsActivity.class);

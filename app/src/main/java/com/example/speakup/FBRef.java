@@ -69,4 +69,10 @@ public class FBRef {
      * Points to the 'Recordings/' directory.
      */
     public static StorageReference refRecordingsMedia = refST.child("Recordings/");
+
+    /**
+     * Reference to the 'Simulations' node in the Realtime Database.
+     * Stores metadata and AI feedback for full exam simulations.
+     */
+    public static DatabaseReference refSimulations = FBDB.getReference("Simulations");
 }

@@ -1,14 +1,23 @@
 package com.example.speakup.Activities;
 
+import static com.example.speakup.FBRef.refAuth;
 import static com.example.speakup.FBRef.refQuestions;
+import static com.example.speakup.FBRef.refRecordings;
+import static com.example.speakup.FBRef.refRecordingsMedia;
+import static com.example.speakup.FBRef.refSimulations;
+import static com.example.speakup.Prompts.PERSONAL_PROMPT;
+import static com.example.speakup.Prompts.PROJECT_PROMPT;
+import static com.example.speakup.Prompts.VIDEO_CLIPS_PROMPT;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -28,21 +37,38 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.speakup.GeminiCallback;
+import com.example.speakup.GeminiManager;
 import com.example.speakup.Objects.Question;
+import com.example.speakup.Objects.Recording;
+import com.example.speakup.Objects.Simulation;
+import com.example.speakup.Objects.TopicDetail;
 import com.example.speakup.R;
 import com.example.speakup.RecordingManager;
 import com.example.speakup.TtsHelper;
 import com.example.speakup.Utilities;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
 
+import org.json.JSONException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 public class SimulationsActivity extends Utilities implements View.OnClickListener {
@@ -75,6 +101,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
     private int currentProgress = 0, totalSeconds = 0, maxProgress = 0, recordedSeconds = 0;
     private int pauseTimeInSeconds = -1;
+    private boolean isFinishDialogOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -328,6 +355,12 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     private void changeQuestion(int direction) {
+        // Prevent navigation while recording is in progress
+        if (currentRecordingManager != null && currentRecordingManager.isRecording()) {
+            Toast.makeText(this, "Stop recording before changing questions", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         int newIndex = currentQuestionIndex + direction;
         if (newIndex >= 0 && newIndex < questions.size()) {
             if (mediaPlayer != null) {
@@ -500,10 +533,555 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     private void finishSimulation() {
-        if (simulationTimer != null) {
-            simulationTimer.cancel();
+        if (isFinishDialogOpen) return;
+        isFinishDialogOpen = true;
+        new AlertDialog.Builder(this)
+                .setTitle("Finish simulation?")
+                .setMessage("Are you sure you want to finish and submit all answers for grading?")
+                .setPositiveButton("Finish", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (simulationTimer != null) {
+                            simulationTimer.cancel();
+                        }
+                        isFinishDialogOpen = false;
+                        gradeAllSimulationAnswersAndSave();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .setOnDismissListener(dialogInterface -> isFinishDialogOpen = false)
+                .show();
+    }
+
+    private void gradeAllSimulationAnswersAndSave() {
+        if (questions == null || recordingManagers == null || questions.size() < 4 || recordingManagers.size() < 4) {
+            Toast.makeText(this, "Simulation is not ready (missing questions/recordings).", Toast.LENGTH_SHORT).show();
+            return;
         }
-        Toast.makeText(this, "Simulation finished!", Toast.LENGTH_LONG).show();
+
+        // Collect audio for all 4 questions (stop recording chunks if needed)
+        ArrayList<byte[]> filesBytes = new ArrayList<>();
+        ArrayList<String> mimeTypes = new ArrayList<>();
+        ArrayList<String> audioFilePaths = new ArrayList<>();
+        boolean[] isEmptyAudio = new boolean[4];
+
+        for (int i = 0; i < 4; i++) {
+            RecordingManager rm = recordingManagers.get(i);
+            if (rm == null) {
+                Toast.makeText(this, "Missing recording manager for question " + (i + 1), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (rm.isRecording()) {
+                rm.stopRecordingChunk();
+            }
+
+            String filePath = rm.getFinalFilePath();
+            if (filePath == null) {
+                Toast.makeText(this, "Please record an answer for question " + (i + 1), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            try {
+                byte[] bytes = rm.getBytes(filePath);
+                filesBytes.add(bytes);
+                mimeTypes.add("audio/aac");
+                audioFilePaths.add(filePath);
+                isEmptyAudio[i] = isEmptyAudio(bytes, filePath);
+            } catch (IOException e) {
+                Toast.makeText(this, "Failed reading audio for question " + (i + 1), Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        ProgressDialog pd = new ProgressDialog(this);
+        pd.setCancelable(false);
+        pd.setTitle("Analyzing simulation...");
+        pd.setMessage("Waiting for Gemini...");
+        pd.show();
+
+        // Build one prompt for Gemini (4 recordings in the same order as questions[0..3])
+        String prompt = "You are grading a COBE simulation.\n\n";
+        prompt += "There are exactly 4 audio recordings below, in this exact order:\n";
+        prompt += "1) Question: " + questions.get(0).getFullQuestion() + "\n";
+        if ("Video Clip Questions".equals(questions.get(0).getCategory())) {
+            prompt += "Video URL: " + questions.get(0).getVideoUrl() + "\n";
+        }
+        prompt += "2) Question: " + questions.get(1).getFullQuestion() + "\n";
+        if ("Video Clip Questions".equals(questions.get(1).getCategory())) {
+            prompt += "Video URL: " + questions.get(1).getVideoUrl() + "\n";
+        }
+        prompt += "3) Question: " + questions.get(2).getFullQuestion() + "\n";
+        if ("Video Clip Questions".equals(questions.get(2).getCategory())) {
+            prompt += "Video URL: " + questions.get(2).getVideoUrl() + "\n";
+        }
+        prompt += "4) Question: " + questions.get(3).getFullQuestion() + "\n";
+        if ("Video Clip Questions".equals(questions.get(3).getCategory())) {
+            prompt += "Video URL: " + questions.get(3).getVideoUrl() + "\n";
+        }
+
+        // Add category-specific instructions per recording (so Gemini uses your existing rubric)
+        prompt += "\nCategory-specific grading instructions (recordings 1..4):\n";
+        for (int i = 0; i < 4; i++) {
+            Question q = questions.get(i);
+            prompt += "\n--- Recording " + (i + 1) + " ---\n";
+
+            if ("Personal Questions".equals(q.getCategory())) {
+                prompt += PERSONAL_PROMPT;
+            } else if ("Project Questions".equals(q.getCategory())) {
+                prompt += PROJECT_PROMPT;
+            } else if ("Video Clip Questions".equals(q.getCategory())) {
+                prompt += VIDEO_CLIPS_PROMPT;
+            }
+
+            prompt += q.getFullQuestion();
+
+            if ("Video Clip Questions".equals(q.getCategory())) {
+                prompt += "\nVideo URL: " + q.getVideoUrl() + "\n";
+            }
+        }
+
+        prompt += "\nEMPTY AUDIO RULE: If a recording contains no intelligible speech (empty/silence), set:\n";
+        prompt += "- topicDevelopment, delivery, vocabulary, language, totalSectionScore = 0\n";
+        prompt += "- feedback.overallSummary: \"No speech detected.\"\n";
+        prompt += "- feedback.*.keep and feedback.*.improve must mention no speech was detected.\n\n";
+
+        prompt += "Return ONLY valid JSON in this exact format:\n";
+        prompt += "{ \"recordings\": [ obj1, obj2, obj3, obj4 ] }\n";
+        prompt += "Where each obj1..obj4 is the JSON object described in the corresponding category prompt (i.e., it matches COMPONENT_SCHEMA).\n";
+        prompt += "Do NOT wrap in markdown and do NOT include any extra text.";
+
+        GeminiManager.getInstance().sendTextWithFilesPrompt(prompt, filesBytes, mimeTypes, new GeminiCallback() {
+            @Override
+            public void onSuccess(String result) {
+                pd.dismiss();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        parseAndSaveSimulation(result, audioFilePaths, isEmptyAudio);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+                pd.dismiss();
+                Toast.makeText(SimulationsActivity.this, "Gemini error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private boolean isEmptyAudio(byte[] bytes, String filePath) {
+        try {
+            File f = new File(filePath);
+            long len = (f.exists()) ? f.length() : 0L;
+            if (bytes == null) return true;
+            if (bytes.length < 8000) return true;
+            return len < 8000;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void parseAndSaveSimulation(String json, ArrayList<String> audioFilePaths, boolean[] isEmptyAudio) {
+        String cleanedJson = (json == null) ? "" : json.replaceAll("```json", "").replaceAll("```", "").trim();
+        try {
+            JSONObject root = new JSONObject(cleanedJson);
+            JSONArray recordingsArr = root.getJSONArray("recordings");
+            if (recordingsArr.length() < 4) {
+                Toast.makeText(this, "AI returned unexpected format (missing recordings).", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Build per-recording feedback + scores
+            ArrayList<Recording> recordingsToSave = new ArrayList<>();
+            ArrayList<String> recordingIds = new ArrayList<>();
+            ArrayList<Integer> scores = new ArrayList<>();
+
+            String userId = refAuth.getCurrentUser() != null ? refAuth.getCurrentUser().getUid() : null;
+            if (userId == null) {
+                Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            for (int i = 0; i < 4; i++) {
+                Question q = questions.get(i);
+
+                String recordingId = refRecordings.child(userId).child(q.getQuestionId()).push().getKey();
+                if (recordingId == null) {
+                    Toast.makeText(this, "Failed generating recording id.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String base = (q.getSubTopic() == null || q.getSubTopic().equals("null")) ? q.getTopic() : q.getSubTopic();
+                String finalTitle = base + " (Simulation " + (i + 1) + ")";
+
+                int totalScore;
+                Map<String, TopicDetail> aiFeedBack = new HashMap<>();
+
+                if (isEmptyAudio[i]) {
+                    totalScore = 0;
+                    String msg = "No speech detected in the recording (empty/silence).";
+                    aiFeedBack.put("topicDevelopment", new TopicDetail(0, msg));
+                    aiFeedBack.put("delivery", new TopicDetail(0, msg));
+                    aiFeedBack.put("vocabulary", new TopicDetail(0, msg));
+                    aiFeedBack.put("language", new TopicDetail(0, msg));
+                    aiFeedBack.put("overall", new TopicDetail(0, msg));
+                } else {
+                    JSONObject obj = recordingsArr.getJSONObject(i);
+                    int topicDevelopmentScore = obj.getInt("topicDevelopment");
+                    int deliveryScore = obj.getInt("delivery");
+                    int vocabularyScore = obj.getInt("vocabulary");
+                    int languageScore = obj.getInt("language");
+                    totalScore = obj.getInt("totalSectionScore");
+
+                    JSONObject feedback = obj.getJSONObject("feedback");
+                    aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore, parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
+                    aiFeedBack.put("delivery", new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
+                    aiFeedBack.put("vocabulary", new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
+                    aiFeedBack.put("language", new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
+                    aiFeedBack.put("overall", new TopicDetail(totalScore, feedback.getString("overallSummary")));
+                }
+
+                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, new Date(), totalScore, aiFeedBack);
+                rec.setRecordingId(recordingId);
+
+                recordingsToSave.add(rec);
+                recordingIds.add(recordingId);
+                scores.add(totalScore);
+            }
+
+            int overallScore = 0;
+            for (int s : scores) overallScore += s;
+            overallScore = Math.round(overallScore / 4f);
+
+            // Upload + save recordings sequentially, then create Simulation and navigate.
+            uploadRecordingsSequentially(0, recordingsToSave, recordingIds, audioFilePaths, overallScore);
+        } catch (JSONException e) {
+            Toast.makeText(this, "Failed parsing Gemini JSON.", Toast.LENGTH_SHORT).show();
+            Log.e("SimulationsActivity", "Parse error", e);
+        }
+    }
+
+    private void uploadRecordingsSequentially(final int idx,
+                                                final ArrayList<Recording> recordingsToSave,
+                                                final ArrayList<String> recordingIds,
+                                                final ArrayList<String> audioFilePaths,
+                                                final int overallScore) {
+        final int total = recordingsToSave.size();
+        if (idx >= total) {
+            createSimulationAndNavigate(recordingsToSave, recordingIds, overallScore);
+            return;
+        }
+
+        String userId = recordingsToSave.get(idx).getUserId();
+        Recording rec = recordingsToSave.get(idx);
+        String filePath = audioFilePaths.get(idx);
+
+        StorageReference fileRef = refRecordingsMedia.child(userId + "/" + rec.getRecordingId() + ".aac");
+        ProgressDialog savingPd = new ProgressDialog(this);
+        savingPd.setCancelable(false);
+        savingPd.setMessage("Saving simulation recordings (" + (idx + 1) + "/" + total + ")...");
+        savingPd.show();
+
+        fileRef.putFile(Uri.fromFile(new File(filePath)))
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        refRecordings.child(userId).child(rec.getQuestionId()).child(rec.getRecordingId())
+                                .setValue(rec)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void unused) {
+                                        savingPd.dismiss();
+                                        uploadRecordingsSequentially(idx + 1, recordingsToSave, recordingIds, audioFilePaths, overallScore);
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        savingPd.dismiss();
+                                        Toast.makeText(SimulationsActivity.this, "Failed saving recording: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        savingPd.dismiss();
+                        Toast.makeText(SimulationsActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void createSimulationAndNavigate(ArrayList<Recording> recordingsToSave,
+                                              ArrayList<String> recordingIds,
+                                              int overallScore) {
+        String userId = recordingsToSave.get(0).getUserId();
+        String simulationId = refSimulations.push().getKey();
+        if (simulationId == null) {
+            Toast.makeText(this, "Failed creating simulation.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Simulation sim = new Simulation();
+        sim.setSimulationId(simulationId);
+        sim.setUserId(userId);
+        sim.setDateCompleted(new Date());
+        sim.setOverAllScore(overallScore);
+        sim.setRecordingsIds(recordingIds);
+
+        refSimulations.child(simulationId).setValue(sim)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Intent i = new Intent(SimulationsActivity.this, SimulationResultsActivity.class);
+                        i.putExtra("overallScore", overallScore);
+                        i.putExtra("recordings", recordingsToSave);
+                        startActivity(i);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(SimulationsActivity.this, "Failed saving simulation: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void submitCurrentAnswerForGrading() {
+        if (currentRecordingManager == null) {
+            Toast.makeText(this, "No recording manager found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (recordedSeconds <= 0) {
+            Toast.makeText(this, "You need to record an answer first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // If still recording, stop the current chunk so we have a usable file
+        if (currentRecordingManager.isRecording()) {
+            currentRecordingManager.stopRecordingChunk();
+        }
+
+        // Mirror the practice flow: allow either a paused single chunk or a finalized merged recording
+        if (!(currentRecordingManager.isPaused() || currentRecordingManager.isFinalized())) {
+            Toast.makeText(this, "Please finish your recording first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String filePath = currentRecordingManager.getFinalFilePath();
+        if (filePath == null) {
+            Toast.makeText(this, "No recording found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        byte[] bytes;
+        try {
+            bytes = currentRecordingManager.getBytes(filePath);
+        } catch (IOException e) {
+            Log.e("SimulationsActivity", "Error reading file", e);
+            Toast.makeText(this, "Error reading recording file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // If the audio is basically empty/silence, skip Gemini and force a 0 score.
+        // (Gemini may hallucinate scores even when there's no speech.)
+        try {
+            File recFile = new File(filePath);
+            long sizeBytes = recFile.exists() ? recFile.length() : 0L;
+            if (recordedSeconds < 2 || sizeBytes < 8000L || (bytes != null && bytes.length < 8000)) {
+                Map<String, TopicDetail> emptyFeedback = new HashMap<>();
+                String emptySummary = "No speech detected in the recording (empty/silence).";
+                emptyFeedback.put("topicDevelopment", new TopicDetail(0, emptySummary));
+                emptyFeedback.put("delivery", new TopicDetail(0, emptySummary));
+                emptyFeedback.put("vocabulary", new TopicDetail(0, emptySummary));
+                emptyFeedback.put("language", new TopicDetail(0, emptySummary));
+                emptyFeedback.put("overall", new TopicDetail(0, emptySummary));
+                saveSimulationToFirebase(emptyFeedback, 0, filePath, questions.get(currentQuestionIndex));
+                return;
+            }
+        } catch (Exception ignore) {
+            // Fall back to Gemini if our empty check fails.
+        }
+
+        ProgressDialog pD = new ProgressDialog(this);
+        pD.setTitle("Analyzing answer...");
+        pD.setMessage("Waiting for response...");
+        pD.setCancelable(false);
+        pD.show();
+
+        Question q = questions.get(currentQuestionIndex);
+        String prompt = "";
+        switch (q.getCategory()) {
+            case "Personal Questions": prompt = PERSONAL_PROMPT; break;
+            case "Project Questions": prompt = PROJECT_PROMPT; break;
+            case "Video Clip Questions": prompt = VIDEO_CLIPS_PROMPT; break;
+        }
+        prompt += q.getFullQuestion();
+        prompt += "\n\nIMPORTANT: If the audio contains no intelligible speech (empty audio/silence), " +
+                "set topicDevelopment, delivery, vocabulary, language, and totalSectionScore to 0, " +
+                "and in feedback.*.keep/feedback.*.improve write that no speech was detected. " +
+                "Return ONLY valid JSON matching the schema.";
+
+        GeminiManager.getInstance().sendTextWithFilePrompt(prompt, bytes, "audio/aac", new GeminiCallback() {
+            @Override
+            public void onSuccess(String result) {
+                pD.dismiss();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleSimulationGradingResult(result, filePath, q);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable error) {
+                pD.dismiss();
+                Toast.makeText(SimulationsActivity.this, "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void handleSimulationGradingResult(String json, String filePath, Question q) {
+        Map<String, TopicDetail> aiFeedBack = new HashMap<>();
+        int totalScore;
+        try {
+            String cleanedJson = json.replaceAll("```json", "").replaceAll("```", "").trim();
+            JSONObject root = new JSONObject(cleanedJson);
+
+            int topicDevelopmentScore = root.getInt("topicDevelopment");
+            int deliveryScore = root.getInt("delivery");
+            int vocabularyScore = root.getInt("vocabulary");
+            int languageScore = root.getInt("language");
+            totalScore = root.getInt("totalSectionScore");
+
+            JSONObject feedback = root.getJSONObject("feedback");
+
+            aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore, parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
+            aiFeedBack.put("delivery", new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
+            aiFeedBack.put("vocabulary", new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
+            aiFeedBack.put("language", new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
+            aiFeedBack.put("overall", new TopicDetail(totalScore, feedback.getString("overallSummary")));
+        } catch (JSONException e) {
+            Log.e("JSON_ERROR", "Failed to parse: " + json, e);
+            Toast.makeText(this, "AI Formatting Error", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        saveSimulationToFirebase(aiFeedBack, totalScore, filePath, q);
+    }
+
+    private String parseFeedbackSection(JSONObject section) throws JSONException {
+        return "Keep: " + section.getString("keep") + "\nImprove: " + section.getString("improve");
+    }
+
+    private void saveSimulationToFirebase(Map<String, TopicDetail> feedback, int score, String filePath, Question q) {
+        String userId = refAuth.getCurrentUser() != null ? refAuth.getCurrentUser().getUid() : null;
+        if (userId == null) {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        refRecordings.child(userId).child(q.getQuestionId()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dS) {
+                long count = dS.getChildrenCount() + 1;
+                String base = (q.getSubTopic() == null || q.getSubTopic().equals("null")) ? q.getTopic() : q.getSubTopic();
+                String finalTitle = base + " (Simulation " + count + ")";
+
+                String recordingId = refRecordings.child(userId).push().getKey();
+                if (recordingId == null) {
+                    Toast.makeText(SimulationsActivity.this, "Failed to create recording id", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, new Date(), score, feedback);
+                rec.setRecordingId(recordingId);
+                uploadSimulationAudioAndMetadata(rec, filePath);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(SimulationsActivity.this, "Failed to save recording", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void uploadSimulationAudioAndMetadata(Recording rec, String filePath) {
+        StorageReference fileRef = refRecordingsMedia.child(rec.getUserId() + "/" + rec.getRecordingId() + ".aac");
+
+        ProgressDialog pD = new ProgressDialog(this);
+        pD.setCancelable(false);
+        pD.setMessage("Saving simulation...");
+        pD.show();
+
+        fileRef.putFile(Uri.fromFile(new File(filePath)))
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        refRecordings.child(rec.getUserId()).child(rec.getQuestionId()).child(rec.getRecordingId()).setValue(rec)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void unused) {
+                                        String simulationId = refSimulations.push().getKey();
+                                        if (simulationId == null) {
+                                            pD.dismiss();
+                                            Toast.makeText(SimulationsActivity.this, "Failed to create simulation", Toast.LENGTH_SHORT).show();
+                                            return;
+                                        }
+
+                                        Simulation sim = new Simulation();
+                                        sim.setSimulationId(simulationId);
+                                        sim.setUserId(rec.getUserId());
+                                        sim.setDateCompleted(new Date());
+                                        sim.setOverAllScore(rec.getScore());
+
+                                        java.util.List<String> ids = new java.util.ArrayList<>();
+                                        ids.add(rec.getRecordingId());
+                                        sim.setRecordingsIds(ids);
+
+                                        refSimulations.child(simulationId).setValue(sim)
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void unused) {
+                                                        pD.dismiss();
+                                                        Intent si = new Intent(SimulationsActivity.this, ResultsActivity.class);
+                                                        si.putExtra("recording", rec);
+                                                        si.putExtra("audio_path", filePath);
+                                                        startActivity(si);
+                                                        finish();
+                                                    }
+                                                })
+                                                .addOnFailureListener(new OnFailureListener() {
+                                                    @Override
+                                                    public void onFailure(@NonNull Exception e) {
+                                                        pD.dismiss();
+                                                        Toast.makeText(SimulationsActivity.this, "Failed to save simulation: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                                    }
+                                                });
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        pD.dismiss();
+                                        Toast.makeText(SimulationsActivity.this, "Failed to save recording: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        pD.dismiss();
+                        Toast.makeText(SimulationsActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     private void prepareVideo(String videoUrl) {
