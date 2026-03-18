@@ -67,13 +67,11 @@
 
             <Space android:layout_width="match_parent" android:layout_height="16dp" />
 
-            <Button
-                android:id="@+id/btn_play_video"
-                android:layout_width="wrap_content"
+            <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+                android:id="@+id/youtube_player_view"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Watch Video Tutorial"
-                android:drawableStart="@android:drawable/ic_media_play"
-                android:backgroundTint="#FF0000" />
+                android:visibility="gone" />
 
             <Space
                 android:id="@+id/videoAudioSpace"
@@ -153,10 +151,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+            <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
 
             <LinearLayout
                 android:id="@+id/pillRecorderContainer"

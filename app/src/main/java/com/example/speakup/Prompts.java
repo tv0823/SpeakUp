@@ -70,11 +70,13 @@ public class Prompts {
     private static final String RUBRIC_INSTRUCTIONS =
             "Grading Scale & Criteria:\n" +
                     "1. Topic Development (50%): \n" +
+                    "   - CRITICAL: Check the answer thoroughly for logic and factual accuracy.\n" +
                     "   - 100-76: Relevant, complete understanding, logical, in-depth with detailed examples.\n" +
                     "   - 75-55: Mostly relevant, lacks some detail or examples.\n" +
                     "   - 54-26: Partially relevant, partial understanding, lacks development.\n" +
                     "   - 25-0: Irrelevant, lacks organization, no depth.\n" +
                     "2. Delivery (15%): \n" +
+                    "   - NOTE: Only deduct points if hesitations are excessive or hinder comprehension. Allow for natural pauses.\n" +
                     "   - 100-76: Comprehensible, clear pace/intonation, almost no hesitations.\n" +
                     "   - 75-55: Mostly comprehensible, some hesitations.\n" +
                     "   - 54-26: Difficult to comprehend, many hesitations.\n" +
@@ -88,13 +90,15 @@ public class Prompts {
                     "   - 100-76: Correct structures, English only (except religious/national holidays).\n" +
                     "   - 75-55: Mostly correct structures.\n" +
                     "   - 54-26: Partial use of structures with many errors.\n" +
-                    "   - 25-0: Mostly incorrect, uses languages other than English.\n";
+                    "   - 25-0: Mostly incorrect, uses languages other than English.\n" +
+                    "\nGeneral Tone: Be soft, encouraging, and constructive. Focus on content quality first.\n";
 
     /**
      * AI prompt for evaluating the 'Personal Response' section of the exam.
      */
     public static final String PERSONAL_PROMPT =
             "Task: Grade the 12th grade student on the 'Personal Response' recording of the COBE exam.\n" +
+                    "Verify the answer logic thoroughly before grading.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
@@ -107,7 +111,7 @@ public class Prompts {
      */
     public static final String PROJECT_PROMPT =
             "Task: Grade the 12th grade student on the 'Project Presentation' recording of the COBE exam.\n" +
-                    "Ensure the student explains the research process and personal insights.\n" +
+                    "Ensure the student explains the research process and personal insights. Scrutinize the content for depth.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
@@ -121,6 +125,7 @@ public class Prompts {
     public static final String VIDEO_CLIPS_PROMPT =
             "Task: Grade the 12th grade student on the 'Video Clip Responses' (Part C) recording.\n" +
                     "Crucial: Answers MUST be based on the spoken text from the video clip. Deduct Topic Development points if inaccurate.\n" +
+                    "Be softer on Delivery here as recalling video facts may cause minor pauses.\n" +
                     RUBRIC_INSTRUCTIONS + "\n" +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +

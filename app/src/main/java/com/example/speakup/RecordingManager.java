@@ -95,10 +95,6 @@ public class RecordingManager {
         return bytes;
     }
 
-    public byte[] getFinalBytes() throws IOException {
-        return getBytes(isFinalized ? finalFileName : (audioChunks.isEmpty() ? "" : audioChunks.get(0).getAbsolutePath()));
-    }
-
     public String getFinalFilePath() {
         return isFinalized ? finalFileName : (audioChunks.isEmpty() ? null : audioChunks.get(0).getAbsolutePath());
     }

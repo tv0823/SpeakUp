@@ -10,7 +10,6 @@ import static com.example.speakup.Prompts.VIDEO_CLIPS_PROMPT;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,7 +22,6 @@ import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -52,6 +50,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -70,7 +71,7 @@ public class PracticeQuestionActivity extends Utilities {
     private SeekBar ttsSeekBar, recordingSeekBar;
     private ImageButton playPauseBtn, recordBtn, playRecordingBtn;
     private FrameLayout linesContainer;
-    private Button playButton;
+    private YouTubePlayerView youTubePlayerView;
 
     private Handler timerHandler, recordingTimerHandler;
     private Question question;
@@ -150,14 +151,7 @@ public class PracticeQuestionActivity extends Utilities {
         playRecordingBtn = findViewById(R.id.playRecordingBtn);
         ImageButton deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
         linesContainer = findViewById(R.id.linesContainer);
-        playButton = findViewById(R.id.btn_play_video);
-
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (question != null && question.getVideoUrl() != null) setupYouTubePlayer(question.getVideoUrl());
-            }
-        });
+        youTubePlayerView = findViewById(R.id.youtube_player_view);
 
         recordingSeekBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -381,20 +375,20 @@ public class PracticeQuestionActivity extends Utilities {
         maxProgress = totalSeconds * 10;
         if (ttsSeekBar != null) ttsSeekBar.setMax(maxProgress);
         updateTimeLabels();
-        if (playButton != null) {
-            if ("Video Clip Questions".equals(question.getCategory())
-                    && question.getVideoUrl() != null
-                    && !question.getVideoUrl().equals("null")
-                    && !question.getVideoUrl().isEmpty()) {
+        
+        if ("Video Clip Questions".equals(question.getCategory())
+                && question.getVideoUrl() != null
+                && !question.getVideoUrl().equals("null")
+                && !question.getVideoUrl().isEmpty()) {
 
-                playButton.setVisibility(View.VISIBLE);
-                View space = findViewById(R.id.videoAudioSpace);
-                if (space != null) space.setVisibility(View.VISIBLE);
-            } else {
-                playButton.setVisibility(View.GONE);
-                View space = findViewById(R.id.videoAudioSpace);
-                if (space != null) space.setVisibility(View.GONE);
-            }
+            youTubePlayerView.setVisibility(View.VISIBLE);
+            setupYouTubePlayer(question.getVideoUrl());
+            View space = findViewById(R.id.videoAudioSpace);
+            if (space != null) space.setVisibility(View.VISIBLE);
+        } else {
+            youTubePlayerView.setVisibility(View.GONE);
+            View space = findViewById(R.id.videoAudioSpace);
+            if (space != null) space.setVisibility(View.GONE);
         }
     }
 
@@ -608,11 +602,13 @@ public class PracticeQuestionActivity extends Utilities {
     private void setupYouTubePlayer(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
         if (videoId.isEmpty()) return;
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + videoId)));
-        } catch (ActivityNotFoundException ex) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + videoId)));
-        }
+        
+        youTubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
+            @Override
+            public void onReady(@NonNull YouTubePlayer youTubePlayer) {
+                youTubePlayer.cueVideo(videoId, 0f);
+            }
+        });
     }
 
     private String extractVideoId(String videoUrl) {
@@ -631,6 +627,9 @@ public class PracticeQuestionActivity extends Utilities {
         if (recordingManager != null) recordingManager.release();
         if (tts != null) tts.destroy();
         if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+        if (youTubePlayerView != null) {
+            youTubePlayerView.release();
+        }
         recordingTimerHandler.removeCallbacksAndMessages(null);
         timerHandler.removeCallbacksAndMessages(null);
     }

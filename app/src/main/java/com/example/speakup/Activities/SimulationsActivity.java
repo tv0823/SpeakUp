@@ -5,13 +5,10 @@ import static com.example.speakup.FBRef.refQuestions;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -39,6 +36,9 @@ import com.example.speakup.Utilities;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,11 +52,14 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     // UI Components
     private View introCard;
     private LinearLayout questionsContainer, timerLayout;
-    private Button btnNext, btnPrevious, btnFinishSim, btnPlayVideo;
+    private Button btnNext, btnPrevious, btnFinishSim;
     private TextView tvTimer, questionTitleTv, currentTimeTv, totalTimeTv, recordedTimeTv, playbackSubTitle;
     private SeekBar ttsSeekBar, recordingSeekBar;
     private ImageButton playPauseBtn, recordBtn, playRecordingBtn;
     private FrameLayout linesContainer;
+    private YouTubePlayerView youTubePlayerView;
+    private YouTubePlayer activeYouTubePlayer;
+    private String currentVideoId;
 
     // Logic Helpers
     private Handler timerHandler, recordingTimerHandler;
@@ -91,7 +94,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         btnNext = findViewById(R.id.btnNext);
         btnPrevious = findViewById(R.id.btnPrevious);
         btnFinishSim = findViewById(R.id.btnFinishSim);
-        btnPlayVideo = findViewById(R.id.btn_play_video);
         tvTimer = findViewById(R.id.tvTimer);
         questionTitleTv = findViewById(R.id.questionTitleTv);
         currentTimeTv = findViewById(R.id.currentTimeTv);
@@ -105,12 +107,22 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         playRecordingBtn = findViewById(R.id.playRecordingBtn);
         ImageButton deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
         linesContainer = findViewById(R.id.linesContainer);
+        youTubePlayerView = findViewById(R.id.youtube_player_view);
+
+        youTubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
+            @Override
+            public void onReady(@NonNull YouTubePlayer youTubePlayer) {
+                activeYouTubePlayer = youTubePlayer;
+                if (currentVideoId != null) {
+                    activeYouTubePlayer.cueVideo(currentVideoId, 0f);
+                }
+            }
+        });
 
         btnStartSim.setOnClickListener(this);
         btnNext.setOnClickListener(this);
         btnPrevious.setOnClickListener(this);
         btnFinishSim.setOnClickListener(this);
-        btnPlayVideo.setOnClickListener(this);
         playPauseBtn.setOnClickListener(this);
         recordBtn.setOnClickListener(this);
         playRecordingBtn.setOnClickListener(this);
@@ -176,40 +188,29 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 ArrayList<ArrayList<Question>> videoGroups = new ArrayList<>();
                 ArrayList<String> videoUrls = new ArrayList<>();
 
-                // 1. Traverse the 3-level tree
                 for (DataSnapshot categorySnap : snapshot.getChildren()) {
                     String category = categorySnap.getKey();
-                    Log.d("SIM_DEBUG", "Checking category: " + category); // Check Logcat!
 
                     for (DataSnapshot topicSnap : categorySnap.getChildren()) {
                         for (DataSnapshot questionSnap : topicSnap.getChildren()) {
-
-                            // Safety: Skip if it's a metadata string instead of an object
-                            if (questionSnap.getValue() instanceof String) continue;
-
                             Question q = questionSnap.getValue(Question.class);
                             if (q == null || q.getQuestionId() == null) continue;
 
-                            // 2. Sort into lists (Use .trim().equalsIgnoreCase for safety)
+                            // Sort into lists
                             String catSafe = (category != null) ? category.trim() : "";
 
-                            if (catSafe.equalsIgnoreCase("Personal Questions")) {
+                            if (catSafe.equals("Personal Questions")) {
                                 personalList.add(q);
-                            } else if (catSafe.equalsIgnoreCase("Project Questions")) {
+                            } else if (catSafe.equals("Project Questions")) {
                                 projectList.add(q);
-                            } else if (catSafe.equalsIgnoreCase("Video Clip Questions")) {
+                            } else if (catSafe.equals("Video Clip Questions")) {
                                 groupVideoQuestions(q, videoUrls, videoGroups);
                             }
                         }
                     }
                 }
 
-                // LOG THE RESULTS
-                Log.d("SIM_DEBUG", "Personal: " + personalList.size());
-                Log.d("SIM_DEBUG", "Project: " + projectList.size());
-                Log.d("SIM_DEBUG", "Video Groups: " + videoGroups.size());
-
-                // 3. Random Selection Logic
+                // Random Selection Logic
                 Random random = new Random();
                 questions.clear();
 
@@ -224,16 +225,13 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 }
 
                 // Pick 1 Video Group (and 2 questions from it)
-                ArrayList<Question> allVideoQs = new ArrayList<>();
                 ArrayList<ArrayList<Question>> eligibleGroups = new ArrayList<>();
 
                 for (ArrayList<Question> group : videoGroups) {
                     if (group.size() >= 2) eligibleGroups.add(group);
-                    allVideoQs.addAll(group);
                 }
 
                 if (!eligibleGroups.isEmpty()) {
-                    // Ideally pick 2 from the same video
                     ArrayList<Question> chosen = eligibleGroups.get(random.nextInt(eligibleGroups.size()));
                     questions.add(chosen.get(0));
                     questions.add(chosen.get(1));
@@ -241,7 +239,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
                 pd.dismiss();
 
-                // 4. Final Validation
+                // Final Validation
                 if (questions.size() < 4) {
                     Toast.makeText(SimulationsActivity.this,
                             "Simulation requires 1 Personal, 1 Project, and 2 Video questions.",
@@ -306,8 +304,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             playRecording();
         } else if (id == R.id.deleteRecordingBtn) {
             confirmDeleteRecording();
-        } else if (id == R.id.btn_play_video) {
-            playVideo();
         }
     }
 
@@ -362,10 +358,17 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
         resetRecordingUI();
 
-        if (q.getVideoUrl() != null && !q.getVideoUrl().equals("null")) {
-            btnPlayVideo.setVisibility(View.VISIBLE);
+        if (q.getVideoUrl() != null && !q.getVideoUrl().equals("null") && !q.getVideoUrl().isEmpty()) {
+            youTubePlayerView.setVisibility(View.VISIBLE);
+            prepareVideo(q.getVideoUrl());
+            View space = findViewById(R.id.videoAudioSpace);
+            if (space != null) space.setVisibility(View.VISIBLE);
         } else {
-            btnPlayVideo.setVisibility(View.GONE);
+            youTubePlayerView.setVisibility(View.GONE);
+            currentVideoId = null;
+            if (activeYouTubePlayer != null) activeYouTubePlayer.pause();
+            View space = findViewById(R.id.videoAudioSpace);
+            if (space != null) space.setVisibility(View.GONE);
         }
 
         btnPrevious.setVisibility(index > 0 ? View.VISIBLE : View.INVISIBLE);
@@ -503,20 +506,13 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         Toast.makeText(this, "Simulation finished!", Toast.LENGTH_LONG).show();
     }
 
-    private void playVideo() {
-        String videoUrl = questions.get(currentQuestionIndex).getVideoUrl();
-        if (videoUrl == null || videoUrl.isEmpty() || videoUrl.equals("null")) return;
-
+    private void prepareVideo(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
-        if (videoId.isEmpty()) {
-            Toast.makeText(this, "Invalid YouTube URL", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (videoId.isEmpty()) return;
 
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + videoId)));
-        } catch (ActivityNotFoundException e) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + videoId)));
+        currentVideoId = videoId;
+        if (activeYouTubePlayer != null) {
+            activeYouTubePlayer.cueVideo(videoId, 0f);
         }
     }
 
@@ -543,6 +539,9 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
+        }
+        if (youTubePlayerView != null) {
+            youTubePlayerView.release();
         }
         for (int i = 0; i < recordingManagers.size(); i++) {
             recordingManagers.get(i).release();
