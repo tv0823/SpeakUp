@@ -43,6 +43,7 @@
                 android:id="@+id/introCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp">
                 <LinearLayout
@@ -68,7 +69,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:text="Start Simulation"
-                        android:backgroundTint="#13A4EC" />
+                        android:backgroundTint="#13A4EC"
+                        android:visibility="gone" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -249,21 +251,24 @@
                         android:text="Previous"
                         android:backgroundTint="#9CA3AF" />
                     <Space android:layout_width="12dp" android:layout_height="wrap_content" />
-                    <Button
-                        android:id="@+id/btnNext"
+                    <FrameLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Next"
-                        android:backgroundTint="#13A4EC" />
-                    <Button
-                        android:id="@+id/btnFinishSim"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Finish Simulation"
-                        android:backgroundTint="#10B981"
-                        android:visibility="gone" />
+                        android:layout_weight="1">
+                        <Button
+                            android:id="@+id/btnNext"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Next"
+                            android:backgroundTint="#13A4EC" />
+                        <Button
+                            android:id="@+id/btnFinishSim"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Finish Simulation"
+                            android:backgroundTint="#10B981"
+                            android:visibility="gone" />
+                    </FrameLayout>
                 </LinearLayout>
 
             </LinearLayout>

@@ -64,6 +64,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -102,6 +103,9 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     private int currentProgress = 0, totalSeconds = 0, maxProgress = 0, recordedSeconds = 0;
     private int pauseTimeInSeconds = -1;
     private boolean isFinishDialogOpen = false;
+    private static final long SIMULATION_DURATION_MS = 30 * 60 * 1000L;
+    private long remainingSimulationMillis = SIMULATION_DURATION_MS;
+    private boolean isSimulationFinished = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +115,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         initViews();
         initLogic();
         checkPermissions();
+
+        boolean autoStart = getIntent() != null && getIntent().getBooleanExtra("AUTO_START", false);
+        if (autoStart) {
+            fetchRandomQuestions();
+        }
     }
 
     private void initViews() {
@@ -339,19 +348,38 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         questionsContainer.setVisibility(View.VISIBLE);
         timerLayout.setVisibility(View.VISIBLE);
         loadQuestion(currentQuestionIndex);
+        remainingSimulationMillis = SIMULATION_DURATION_MS;
+        isSimulationFinished = false;
+        startOrResumeSimulationTimer();
+    }
 
-        simulationTimer = new CountDownTimer(30 * 60 * 1000, 1000) {
+    private void startOrResumeSimulationTimer() {
+        if (simulationTimer != null) {
+            simulationTimer.cancel();
+        }
+
+        simulationTimer = new CountDownTimer(remainingSimulationMillis, 1000) {
             public void onTick(long millisUntilFinished) {
+                remainingSimulationMillis = millisUntilFinished;
                 long minutes = (millisUntilFinished / 1000) / 60;
                 long seconds = (millisUntilFinished / 1000) % 60;
                 tvTimer.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
             }
 
             public void onFinish() {
+                remainingSimulationMillis = 0;
+                isSimulationFinished = true;
                 tvTimer.setText("00:00");
-                finishSimulation();
+                finishSimulation(true);
             }
         }.start();
+    }
+
+    private void pauseSimulationTimer() {
+        if (simulationTimer != null) {
+            simulationTimer.cancel();
+            simulationTimer = null;
+        }
     }
 
     private void changeQuestion(int direction) {
@@ -533,7 +561,18 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     private void finishSimulation() {
+        finishSimulation(false);
+    }
+
+    private void finishSimulation(boolean forceFinishNow) {
         if (isFinishDialogOpen) return;
+
+        if (forceFinishNow) {
+            pauseSimulationTimer();
+            gradeAllSimulationAnswersAndSave();
+            return;
+        }
+
         isFinishDialogOpen = true;
         new AlertDialog.Builder(this)
                 .setTitle("Finish simulation?")
@@ -541,35 +580,56 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 .setPositiveButton("Finish", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if (simulationTimer != null) {
-                            simulationTimer.cancel();
+                        ArrayList<byte[]> filesBytes = new ArrayList<>();
+                        ArrayList<String> mimeTypes = new ArrayList<>();
+                        ArrayList<String> audioFilePaths = new ArrayList<>();
+                        boolean[] isEmptyAudio = new boolean[4];
+
+                        // If the user hasn't answered all questions, keep the timer running.
+                        if (!prepareSimulationPayload(filesBytes, mimeTypes, audioFilePaths, isEmptyAudio)) {
+                            isFinishDialogOpen = false;
+                            isSimulationFinished = false;
+                            return;
                         }
+
+                        isSimulationFinished = true;
+                        pauseSimulationTimer();
                         isFinishDialogOpen = false;
-                        gradeAllSimulationAnswersAndSave();
+                        analyzeAndSaveSimulation(filesBytes, mimeTypes, audioFilePaths, isEmptyAudio);
                     }
                 })
                 .setNegativeButton("Cancel", null)
-                .setOnDismissListener(dialogInterface -> isFinishDialogOpen = false)
+                .setOnDismissListener(dialogInterface -> {
+                    isFinishDialogOpen = false;
+                })
                 .show();
     }
 
     private void gradeAllSimulationAnswersAndSave() {
-        if (questions == null || recordingManagers == null || questions.size() < 4 || recordingManagers.size() < 4) {
-            Toast.makeText(this, "Simulation is not ready (missing questions/recordings).", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Collect audio for all 4 questions (stop recording chunks if needed)
         ArrayList<byte[]> filesBytes = new ArrayList<>();
         ArrayList<String> mimeTypes = new ArrayList<>();
         ArrayList<String> audioFilePaths = new ArrayList<>();
         boolean[] isEmptyAudio = new boolean[4];
 
+        if (!prepareSimulationPayload(filesBytes, mimeTypes, audioFilePaths, isEmptyAudio)) return;
+        analyzeAndSaveSimulation(filesBytes, mimeTypes, audioFilePaths, isEmptyAudio);
+    }
+
+    private boolean prepareSimulationPayload(ArrayList<byte[]> filesBytes,
+                                               ArrayList<String> mimeTypes,
+                                               ArrayList<String> audioFilePaths,
+                                               boolean[] isEmptyAudio) {
+        if (questions == null || recordingManagers == null || questions.size() < 4 || recordingManagers.size() < 4) {
+            Toast.makeText(this, "Simulation is not ready (missing questions/recordings).", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        // Collect audio for all 4 questions (stop recording chunks if needed)
         for (int i = 0; i < 4; i++) {
             RecordingManager rm = recordingManagers.get(i);
             if (rm == null) {
                 Toast.makeText(this, "Missing recording manager for question " + (i + 1), Toast.LENGTH_SHORT).show();
-                return;
+                return false;
             }
 
             if (rm.isRecording()) {
@@ -579,7 +639,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             String filePath = rm.getFinalFilePath();
             if (filePath == null) {
                 Toast.makeText(this, "Please record an answer for question " + (i + 1), Toast.LENGTH_SHORT).show();
-                return;
+                return false;
             }
 
             try {
@@ -590,10 +650,17 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 isEmptyAudio[i] = isEmptyAudio(bytes, filePath);
             } catch (IOException e) {
                 Toast.makeText(this, "Failed reading audio for question " + (i + 1), Toast.LENGTH_SHORT).show();
-                return;
+                return false;
             }
         }
 
+        return true;
+    }
+
+    private void analyzeAndSaveSimulation(ArrayList<byte[]> filesBytes,
+                                           ArrayList<String> mimeTypes,
+                                           ArrayList<String> audioFilePaths,
+                                           boolean[] isEmptyAudio) {
         ProgressDialog pd = new ProgressDialog(this);
         pd.setCancelable(false);
         pd.setTitle("Analyzing simulation...");
@@ -703,6 +770,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
                 return;
             }
+            Date simulationDate = new Date();
+            String simulationSessionLabel = buildSimulationSessionLabel(simulationDate);
 
             for (int i = 0; i < 4; i++) {
                 Question q = questions.get(i);
@@ -714,7 +783,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 }
 
                 String base = (q.getSubTopic() == null || q.getSubTopic().equals("null")) ? q.getTopic() : q.getSubTopic();
-                String finalTitle = base + " (Simulation " + (i + 1) + ")";
+                String finalTitle = base + " (" + simulationSessionLabel + " - Q" + (i + 1) + ")";
 
                 int totalScore;
                 Map<String, TopicDetail> aiFeedBack = new HashMap<>();
@@ -743,7 +812,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     aiFeedBack.put("overall", new TopicDetail(totalScore, feedback.getString("overallSummary")));
                 }
 
-                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, new Date(), totalScore, aiFeedBack);
+                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, simulationDate, totalScore, aiFeedBack);
                 rec.setRecordingId(recordingId);
 
                 recordingsToSave.add(rec);
@@ -756,7 +825,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             overallScore = Math.round(overallScore / 4f);
 
             // Upload + save recordings sequentially, then create Simulation and navigate.
-            uploadRecordingsSequentially(0, recordingsToSave, recordingIds, audioFilePaths, overallScore);
+            uploadRecordingsSequentially(0, recordingsToSave, recordingIds, audioFilePaths, overallScore, simulationDate);
         } catch (JSONException e) {
             Toast.makeText(this, "Failed parsing Gemini JSON.", Toast.LENGTH_SHORT).show();
             Log.e("SimulationsActivity", "Parse error", e);
@@ -767,10 +836,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                                                 final ArrayList<Recording> recordingsToSave,
                                                 final ArrayList<String> recordingIds,
                                                 final ArrayList<String> audioFilePaths,
-                                                final int overallScore) {
+                                                final int overallScore,
+                                                final Date simulationDate) {
         final int total = recordingsToSave.size();
         if (idx >= total) {
-            createSimulationAndNavigate(recordingsToSave, recordingIds, overallScore);
+            createSimulationAndNavigate(recordingsToSave, recordingIds, overallScore, simulationDate);
             return;
         }
 
@@ -794,7 +864,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                                     @Override
                                     public void onSuccess(Void unused) {
                                         savingPd.dismiss();
-                                        uploadRecordingsSequentially(idx + 1, recordingsToSave, recordingIds, audioFilePaths, overallScore);
+                                        uploadRecordingsSequentially(idx + 1, recordingsToSave, recordingIds, audioFilePaths, overallScore, simulationDate);
                                     }
                                 })
                                 .addOnFailureListener(new OnFailureListener() {
@@ -817,7 +887,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
     private void createSimulationAndNavigate(ArrayList<Recording> recordingsToSave,
                                               ArrayList<String> recordingIds,
-                                              int overallScore) {
+                                              int overallScore,
+                                              Date simulationDate) {
         String userId = recordingsToSave.get(0).getUserId();
         String simulationId = refSimulations.push().getKey();
         if (simulationId == null) {
@@ -828,7 +899,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         Simulation sim = new Simulation();
         sim.setSimulationId(simulationId);
         sim.setUserId(userId);
-        sim.setDateCompleted(new Date());
+        sim.setDateCompleted(simulationDate);
         sim.setOverAllScore(overallScore);
         sim.setRecordingsIds(recordingIds);
 
@@ -849,6 +920,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                         Toast.makeText(SimulationsActivity.this, "Failed saving simulation: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private String buildSimulationSessionLabel(Date simulationDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("Simulation dd/MM/yyyy HH:mm", Locale.getDefault());
+        return sdf.format(simulationDate);
     }
 
     private void submitCurrentAnswerForGrading() {

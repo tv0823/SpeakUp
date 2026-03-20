@@ -6,6 +6,7 @@ import android.os.SystemClock;
 import android.widget.Toast;
 
 import com.example.speakup.Fragments.ProfileFragment;
+import com.example.speakup.Fragments.SimulationStartFragment;
 import com.example.speakup.Fragments.TopicsFragment;
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
@@ -63,8 +64,7 @@ public class MasterActivity extends Utilities {
             } else if (itemId == R.id.nav_practice) {
                 selectedFragment = TopicsFragment.newInstance("Practice Topics");
             } else if (itemId == R.id.nav_simulations) {
-                Toast.makeText(this, "Simulations", Toast.LENGTH_SHORT).show();
-                return true;
+                selectedFragment = new SimulationStartFragment();
             } else if (itemId == R.id.nav_recordings) {
                 selectedFragment = TopicsFragment.newInstance("Past Recordings");
             } else if (itemId == R.id.nav_profile) {

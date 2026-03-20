@@ -4,6 +4,7 @@ import static com.example.speakup.FBRef.refAuth;
 import static com.example.speakup.FBRef.refQuestionMedia;
 import static com.example.speakup.FBRef.refQuestions;
 import static com.example.speakup.FBRef.refRecordings;
+import static com.example.speakup.FBRef.refSimulations;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -26,8 +27,10 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.speakup.Activities.ResultsActivity;
+import com.example.speakup.Activities.SimulationResultsActivity;
 import com.example.speakup.Objects.Question;
 import com.example.speakup.Objects.Recording;
+import com.example.speakup.Objects.Simulation;
 import com.example.speakup.R;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.firebase.database.DataSnapshot;
@@ -36,7 +39,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -78,6 +83,7 @@ public class RecordingsGeneralFragment extends Fragment {
      * List of all recordings fetched from Firebase that belong to the current category.
      */
     private ArrayList<Recording> allRecordingsList;
+    private ArrayList<Simulation> allSimulationsList;
 
     /**
      * The UID of the currently authenticated user.
@@ -155,11 +161,16 @@ public class RecordingsGeneralFragment extends Fragment {
         btnSortDirection = view.findViewById(R.id.btnSortDirection);
 
         pD = new ProgressDialog(getContext());
-        pD.setMessage("Loading recordings...");
+        if ("Simulation".equals(categoryPath)) {
+            pD.setMessage("Loading simulations...");
+        } else {
+            pD.setMessage("Loading recordings...");
+        }
         pD.setCancelable(false);
         pD.show();
 
         allRecordingsList = new ArrayList<>();
+        allSimulationsList = new ArrayList<>();
         questionIdToImageKey = new HashMap<>();
 
         if (refAuth.getCurrentUser() != null) {
@@ -168,7 +179,11 @@ public class RecordingsGeneralFragment extends Fragment {
 
         setupToggleLogic();
         setupSortDirectionLogic();
-        fetchRecordingsFromFirebase();
+        if ("Simulation".equals(categoryPath)) {
+            fetchSimulationsFromFirebase();
+        } else {
+            fetchRecordingsFromFirebase();
+        }
 
         return view;
     }
@@ -298,6 +313,10 @@ public class RecordingsGeneralFragment extends Fragment {
      * @param sortByGrade If true, sorts by score. If false, sorts by recording date.
      */
     private void applySortAndDisplay(boolean sortByGrade) {
+        if ("Simulation".equals(categoryPath)) {
+            applySortAndDisplaySimulation(sortByGrade);
+            return;
+        }
         if (allRecordingsList == null || allRecordingsList.isEmpty()) return;
         int n = allRecordingsList.size();
 
@@ -341,6 +360,47 @@ public class RecordingsGeneralFragment extends Fragment {
         displayRecordings();
     }
 
+    private void applySortAndDisplaySimulation(boolean sortByGrade) {
+        if (allSimulationsList == null || allSimulationsList.isEmpty()) return;
+        int n = allSimulationsList.size();
+
+        for (int i = 0; i < n - 1; i++) {
+            int targetIndex = i;
+            for (int j = i + 1; j < n; j++) {
+                Simulation s1 = allSimulationsList.get(targetIndex);
+                Simulation s2 = allSimulationsList.get(j);
+                boolean shouldSwap = false;
+
+                if (sortByGrade) {
+                    if (isAscending) {
+                        shouldSwap = s2.getOverAllScore() < s1.getOverAllScore();
+                    } else {
+                        shouldSwap = s2.getOverAllScore() > s1.getOverAllScore();
+                    }
+                } else {
+                    Date d1 = s1.getDateCompleted();
+                    Date d2 = s2.getDateCompleted();
+                    if (d1 != null && d2 != null) {
+                        if (isAscending) {
+                            shouldSwap = d2.before(d1);
+                        } else {
+                            shouldSwap = d2.after(d1);
+                        }
+                    }
+                }
+
+                if (shouldSwap) {
+                    targetIndex = j;
+                }
+            }
+            Simulation temp = allSimulationsList.get(targetIndex);
+            allSimulationsList.set(targetIndex, allSimulationsList.get(i));
+            allSimulationsList.set(i, temp);
+        }
+
+        displaySimulations();
+    }
+
     /**
      * Clears and repopulates the two-column grid with recording cards.
      */
@@ -352,6 +412,17 @@ public class RecordingsGeneralFragment extends Fragment {
         for (int i = 0; i < allRecordingsList.size(); i++) {
             LinearLayout target = (i % 2 == 0) ? columnLeft : columnRight;
             addRecordingCard(target, allRecordingsList.get(i));
+        }
+    }
+
+    private void displaySimulations() {
+        if (columnLeft == null || columnRight == null) return;
+        columnLeft.removeAllViews();
+        columnRight.removeAllViews();
+
+        for (int i = 0; i < allSimulationsList.size(); i++) {
+            LinearLayout target = (i % 2 == 0) ? columnLeft : columnRight;
+            addSimulationCard(target, allSimulationsList.get(i));
         }
     }
 
@@ -386,6 +457,111 @@ public class RecordingsGeneralFragment extends Fragment {
         });
 
         container.addView(cardView);
+    }
+
+    private void addSimulationCard(LinearLayout container, Simulation simulation) {
+        View cardView = getLayoutInflater().inflate(R.layout.item_topic_card, container, false);
+        TextView titleText = cardView.findViewById(R.id.topicTitleText);
+        ImageView imageView = cardView.findViewById(R.id.topicImageView);
+
+        String dateText = "-";
+        if (simulation.getDateCompleted() != null) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            dateText = sdf.format(simulation.getDateCompleted());
+        }
+        titleText.setText("Simulation\nScore: " + simulation.getOverAllScore() + "\n" + dateText);
+        loadSimulationCardImage(imageView);
+
+        cardView.setOnClickListener(view -> openSimulationResult(simulation));
+        container.addView(cardView);
+    }
+
+    private void fetchSimulationsFromFirebase() {
+        if (currentUserId == null) {
+            if (pD != null) pD.dismiss();
+            return;
+        }
+
+        refSimulations.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (pD != null && pD.isShowing()) pD.dismiss();
+                allSimulationsList.clear();
+
+                for (DataSnapshot simSnapshot : snapshot.getChildren()) {
+                    Simulation simulation = simSnapshot.getValue(Simulation.class);
+                    if (simulation != null && currentUserId.equals(simulation.getUserId())) {
+                        allSimulationsList.add(simulation);
+                    }
+                }
+
+                if (allSimulationsList.isEmpty()) {
+                    Toast.makeText(getContext(), "No simulations found", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                applySortAndDisplay(toggleGroup.getCheckedButtonId() == R.id.btnGrade);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (pD != null) pD.dismiss();
+            }
+        });
+    }
+
+    private void openSimulationResult(Simulation simulation) {
+        if (currentUserId == null) return;
+        if (simulation.getRecordingsIds() == null || simulation.getRecordingsIds().isEmpty()) {
+            Toast.makeText(getContext(), "No recordings for this simulation", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProgressDialog loadingDialog = new ProgressDialog(getContext());
+        loadingDialog.setMessage("Loading simulation details...");
+        loadingDialog.setCancelable(false);
+        loadingDialog.show();
+
+        refRecordings.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot userRecordingsSnapshot) {
+                if (loadingDialog.isShowing()) loadingDialog.dismiss();
+
+                ArrayList<Recording> resolvedRecordings = new ArrayList<>();
+                for (String recordingId : simulation.getRecordingsIds()) {
+                    Recording resolved = findRecordingById(userRecordingsSnapshot, recordingId);
+                    if (resolved != null) {
+                        resolvedRecordings.add(resolved);
+                    }
+                }
+
+                if (resolvedRecordings.isEmpty()) {
+                    Toast.makeText(getContext(), "Simulation recordings not found", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Intent intent = new Intent(getContext(), SimulationResultsActivity.class);
+                intent.putExtra("overallScore", simulation.getOverAllScore());
+                intent.putExtra("recordings", resolvedRecordings);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (loadingDialog.isShowing()) loadingDialog.dismiss();
+                Toast.makeText(getContext(), "Failed to load simulation details", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private Recording findRecordingById(DataSnapshot userRecordingsSnapshot, String recordingId) {
+        for (DataSnapshot questionNode : userRecordingsSnapshot.getChildren()) {
+            DataSnapshot recNode = questionNode.child(recordingId);
+            if (!recNode.exists()) continue;
+            Recording rec = recNode.getValue(Recording.class);
+            if (rec != null) return rec;
+        }
+        return null;
     }
 
     /**
@@ -478,5 +654,19 @@ public class RecordingsGeneralFragment extends Fragment {
                         .into(imageView);
             }
         }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.error_image));
+    }
+
+    private void loadSimulationCardImage(ImageView imageView) {
+        StorageReference refFile = refQuestionMedia.child("simulation.jpg");
+        refFile.getDownloadUrl().addOnSuccessListener(uri -> {
+            if (getContext() != null && isAdded()) {
+                Glide.with(this)
+                        .load(uri)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .error(R.drawable.placeholder)
+                        .centerCrop()
+                        .into(imageView);
+            }
+        }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.placeholder));
     }
 }

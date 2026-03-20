@@ -74,8 +74,13 @@ public class TopicsFragment extends Fragment {
         QuestionsPagerAdapter adapter = new QuestionsPagerAdapter(this, this.type);
         viewPager.setAdapter(adapter);
 
-        //Setup Tab Titles
-        String[] tabTitles = new String[]{"Personal Questions", "Project Questions", "Video Clip Questions"};
+        // Setup tab titles by screen type.
+        String[] tabTitles;
+        if ("Practice Topics".equals(this.type)) {
+            tabTitles = new String[]{"Personal Questions", "Project Questions", "Video Clip Questions"};
+        } else {
+            tabTitles = new String[]{"Personal Questions", "Project Questions", "Video Clip Questions", "Simulation"};
+        }
 
         new TabLayoutMediator(tabLayout, viewPager, new TabLayoutMediator.TabConfigurationStrategy() {
             @Override

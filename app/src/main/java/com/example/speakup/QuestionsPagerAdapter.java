@@ -71,6 +71,8 @@ public class QuestionsPagerAdapter extends FragmentStateAdapter {
                     return RecordingsGeneralFragment.newInstance("Project Questions");
                 case 2:
                     return RecordingsGeneralFragment.newInstance("Video Clip Questions");
+                case 3:
+                    return RecordingsGeneralFragment.newInstance("Simulation");
                 default:
                     return RecordingsGeneralFragment.newInstance("Personal Questions");
             }
@@ -84,6 +86,6 @@ public class QuestionsPagerAdapter extends FragmentStateAdapter {
      */
     @Override
     public int getItemCount() {
-        return 3;
+        return "Practice Topics".equals(this.type) ? 3 : 4;
     }
 }

@@ -25,7 +25,6 @@ import android.widget.Toast;
 
 import com.example.speakup.Activities.MasterActivity;
 import com.example.speakup.Activities.RemindersActivity;
-import com.example.speakup.Activities.SimulationsActivity;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.R;
 import com.github.mikephil.charting.charts.LineChart;
@@ -155,8 +154,15 @@ public class QuickAccessFragment extends Fragment {
             btnSimulations.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(getActivity(), SimulationsActivity.class);
-                    startActivity(intent);
+                    // Switch to the same simulation start screen used by the bottom nav.
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new SimulationStartFragment())
+                            .commit();
+
+                    if (getActivity() instanceof MasterActivity) {
+                        BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                        nav.setSelectedItemId(R.id.nav_simulations);
+                    }
                 }
             });
         }
