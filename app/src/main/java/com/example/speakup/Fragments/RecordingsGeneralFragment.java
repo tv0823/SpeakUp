@@ -10,11 +10,11 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +32,7 @@ import com.example.speakup.Objects.Question;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.Simulation;
 import com.example.speakup.R;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -186,6 +187,20 @@ public class RecordingsGeneralFragment extends Fragment {
         }
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // if the user press back button, go to home
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                nav.setSelectedItemId(R.id.nav_home);
+            }
+        });
     }
 
     /**
@@ -669,4 +684,6 @@ public class RecordingsGeneralFragment extends Fragment {
             }
         }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.placeholder));
     }
+    
+    
 }

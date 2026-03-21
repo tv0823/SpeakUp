@@ -19,12 +19,26 @@
         <Space
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2" />
+            android:layout_weight="5" />
+
+        <ImageButton
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:onClick="goBack"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/arrow_back" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="5" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="96"
+            android:layout_weight="60"
             android:gravity="center"
             android:text="Simulation Results"
             android:textColor="#000000"
@@ -34,7 +48,7 @@
         <Space
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2" />
+            android:layout_weight="20" />
     </LinearLayout>
 
     <LinearLayout
@@ -105,6 +119,7 @@
             android:id="@+id/btnViewDetails"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:backgroundTint="#13A4EC"
             android:text="View recording details" />
     </LinearLayout>
 

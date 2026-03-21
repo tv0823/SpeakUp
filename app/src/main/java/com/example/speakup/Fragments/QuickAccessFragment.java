@@ -3,6 +3,7 @@ package com.example.speakup.Fragments;
 import static com.example.speakup.FBRef.refAuth;
 import static com.example.speakup.FBRef.refQuestions;
 import static com.example.speakup.FBRef.refRecordings;
+import static com.example.speakup.FBRef.refSimulations;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -26,6 +27,7 @@ import android.widget.Toast;
 import com.example.speakup.Activities.MasterActivity;
 import com.example.speakup.Activities.RemindersActivity;
 import com.example.speakup.Objects.Recording;
+import com.example.speakup.Objects.Simulation;
 import com.example.speakup.R;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -45,6 +47,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,6 +75,7 @@ public class QuickAccessFragment extends Fragment {
     private static final String CATEGORY_PERSONAL = "Personal Questions";
     private static final String CATEGORY_VIDEO = "Video Clip Questions";
     private static final String CATEGORY_PROJECT = "Project Questions";
+    private static final String CATEGORY_SIMULATIONS = "Simulations";
 
     public QuickAccessFragment() {
         // Required empty public constructor
@@ -205,9 +209,10 @@ public class QuickAccessFragment extends Fragment {
         if (spinnerChartCategory == null) return;
 
         ArrayList<String> categories = new ArrayList<>();
-        categories.add("Personal Questions");
-        categories.add("Video Clip Questions");
-        categories.add("Project Questions");
+        categories.add(CATEGORY_PERSONAL);
+        categories.add(CATEGORY_VIDEO);
+        categories.add(CATEGORY_PROJECT);
+        categories.add(CATEGORY_SIMULATIONS);
         categories.add("Over All");
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
@@ -246,7 +251,13 @@ public class QuickAccessFragment extends Fragment {
 
         String selectedNormalized = (selected == null) ? "" : selected.trim().toLowerCase();
         if (selectedNormalized.equals("over all") || selectedNormalized.equals("overall")) {
-            fetchAndRenderChartOnce(null, "over all");
+            // Over All now only checks recordings, as they already include simulation recordings.
+            fetchAndRenderChartRecordingsOnly(null, "over all");
+            return;
+        }
+
+        if (selected != null && selected.equalsIgnoreCase(CATEGORY_SIMULATIONS)) {
+            fetchAndRenderChartSimulationsOnly();
             return;
         }
 
@@ -262,7 +273,7 @@ public class QuickAccessFragment extends Fragment {
             categoryPath = CATEGORY_PROJECT;
             label = "project";
         } else {
-            fetchAndRenderChartOnce(null, "over all");
+            fetchAndRenderChartRecordingsOnly(null, "over all");
             return;
         }
 
@@ -279,19 +290,19 @@ public class QuickAccessFragment extends Fragment {
                         if (qId != null) allowedQuestionIds.add(qId);
                     }
                 }
-                fetchAndRenderChartOnce(allowedQuestionIds, label);
+                fetchAndRenderChartRecordingsOnly(allowedQuestionIds, label);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 if (!isAdded()) return;
                 Toast.makeText(getContext(), "Failed to load chart category", Toast.LENGTH_SHORT).show();
-                fetchAndRenderChartOnce(null, "over all");
+                fetchAndRenderChartRecordingsOnly(null, "over all");
             }
         });
     }
 
-    private void fetchAndRenderChartOnce(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
+    private void fetchAndRenderChartRecordingsOnly(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
         if (userRecordingsRef == null) return;
 
         userRecordingsRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -299,7 +310,7 @@ public class QuickAccessFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot userSnapshot) {
                 if (!isAdded() || lineChart == null) return;
 
-                ArrayList<Recording> recordings = new ArrayList<>();
+                ArrayList<ChartPoint> pointsData = new ArrayList<>();
                 for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
                     String questionId = questionSnapshot.getKey();
                     if (allowedQuestionIds != null && (questionId == null || !allowedQuestionIds.contains(questionId))) {
@@ -307,76 +318,13 @@ public class QuickAccessFragment extends Fragment {
                     }
                     for (DataSnapshot recordingSnapshot : questionSnapshot.getChildren()) {
                         Recording recording = recordingSnapshot.getValue(Recording.class);
-                        if (recording != null) recordings.add(recording);
+                        if (recording != null && recording.getDateRecorded() != null) {
+                            pointsData.add(new ChartPoint(recording.getDateRecorded(), (float) recording.getScore()));
+                        }
                     }
                 }
 
-                Collections.sort(recordings, new Comparator<Recording>() {
-                    @Override
-                    public int compare(Recording o1, Recording o2) {
-                        if (o1 == null || o2 == null) return 0;
-                        if (o1.getDateRecorded() == null && o2.getDateRecorded() == null) return 0;
-                        if (o1.getDateRecorded() == null) return -1;
-                        if (o2.getDateRecorded() == null) return 1;
-                        return o1.getDateRecorded().compareTo(o2.getDateRecorded());
-                    }
-                });
-
-                ArrayList<Entry> points = new ArrayList<>();
-                if (recordings.isEmpty()) {
-                    // Static preview data (for design) until Firebase has recordings
-                    points.add(new Entry(0, 55f));
-                    points.add(new Entry(1, 62f));
-                    points.add(new Entry(2, 58f));
-                    points.add(new Entry(3, 70f));
-                    points.add(new Entry(4, 66f));
-                    points.add(new Entry(5, 78f));
-                    points.add(new Entry(6, 73f));
-                    points.add(new Entry(7, 82f));
-                    points.add(new Entry(8, 76f));
-                    points.add(new Entry(9, 88f));
-                } else {
-                    // Keep the last 30 points
-                    int start = Math.max(0, recordings.size() - 30);
-                    for (int i = start; i < recordings.size(); i++) {
-                        Recording r = recordings.get(i);
-                        points.add(new Entry(i - start, (float) r.getScore()));
-                    }
-                }
-
-                if (tvAvgGrade != null) {
-                    if (points.isEmpty()) {
-                        tvAvgGrade.setText("--%");
-                    } else {
-                        float sum = 0f;
-                        for (Entry e : points) sum += e.getY();
-                        int avg = Math.round(sum / points.size());
-                        tvAvgGrade.setText(avg + "%");
-                    }
-                }
-
-                LineDataSet dataSet = new LineDataSet(points, label);
-                dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-                dataSet.setCubicIntensity(0.2f);
-                dataSet.setColor(Color.parseColor("#3B82F6")); // blue-500
-                dataSet.setLineWidth(2.75f);
-                dataSet.setDrawCircles(true);
-                dataSet.setCircleColor(Color.parseColor("#1D4ED8")); // blue-700
-                dataSet.setCircleRadius(4f);
-                dataSet.setDrawCircleHole(true);
-                dataSet.setCircleHoleRadius(2f);
-                dataSet.setCircleHoleColor(Color.WHITE);
-                dataSet.setDrawValues(false);
-                dataSet.setDrawFilled(true);
-                dataSet.setFillColor(Color.parseColor("#93C5FD")); // blue-300
-                dataSet.setFillAlpha(70);
-                dataSet.setHighLightColor(Color.parseColor("#94A3B8")); // slate-400
-                dataSet.setDrawHorizontalHighlightIndicator(false);
-
-                lineChart.setData(new LineData(dataSet));
-                lineChart.invalidate();
-
-                dismissChartLoading();
+                renderChartPoints(pointsData, label);
             }
 
             @Override
@@ -386,6 +334,108 @@ public class QuickAccessFragment extends Fragment {
                 dismissChartLoading();
             }
         });
+    }
+
+    private void fetchAndRenderChartSimulationsOnly() {
+        refSimulations.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!isAdded() || lineChart == null) return;
+
+                ArrayList<ChartPoint> pointsData = new ArrayList<>();
+                for (DataSnapshot simSnapshot : snapshot.getChildren()) {
+                    Simulation sim = simSnapshot.getValue(Simulation.class);
+                    if (sim != null && currentUserId.equals(sim.getUserId()) && sim.getDateCompleted() != null) {
+                        pointsData.add(new ChartPoint(sim.getDateCompleted(), (float) sim.getOverAllScore()));
+                    }
+                }
+
+                renderChartPoints(pointsData, "simulations");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded()) return;
+                Toast.makeText(getContext(), "Failed to load simulations", Toast.LENGTH_SHORT).show();
+                dismissChartLoading();
+            }
+        });
+    }
+
+    private void renderChartPoints(ArrayList<ChartPoint> pointsData, String label) {
+        if (!isAdded() || lineChart == null) return;
+
+        Collections.sort(pointsData, new Comparator<ChartPoint>() {
+            @Override
+            public int compare(ChartPoint o1, ChartPoint o2) {
+                return o1.date.compareTo(o2.date);
+            }
+        });
+
+        ArrayList<Entry> entries = new ArrayList<>();
+        if (pointsData.isEmpty()) {
+            // Static preview data (for design) until Firebase has data
+            entries.add(new Entry(0, 55f));
+            entries.add(new Entry(1, 62f));
+            entries.add(new Entry(2, 58f));
+            entries.add(new Entry(3, 70f));
+            entries.add(new Entry(4, 66f));
+            entries.add(new Entry(5, 78f));
+            entries.add(new Entry(6, 73f));
+            entries.add(new Entry(7, 82f));
+            entries.add(new Entry(8, 76f));
+            entries.add(new Entry(9, 88f));
+        } else {
+            // Keep the last 30 points
+            int start = Math.max(0, pointsData.size() - 30);
+            for (int i = start; i < pointsData.size(); i++) {
+                entries.add(new Entry(i - start, pointsData.get(i).score));
+            }
+        }
+
+        if (tvAvgGrade != null) {
+            if (pointsData.isEmpty()) {
+                tvAvgGrade.setText("--%");
+            } else {
+                float sum = 0f;
+                for (ChartPoint p : pointsData) sum += p.score;
+                int avg = Math.round(sum / pointsData.size());
+                tvAvgGrade.setText(avg + "%");
+            }
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, label);
+        dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        dataSet.setCubicIntensity(0.2f);
+        dataSet.setColor(Color.parseColor("#3B82F6")); // blue-500
+        dataSet.setLineWidth(2.75f);
+        dataSet.setDrawCircles(true);
+        dataSet.setCircleColor(Color.parseColor("#1D4ED8")); // blue-700
+        dataSet.setCircleRadius(4f);
+        dataSet.setDrawCircleHole(true);
+        dataSet.setCircleHoleRadius(2f);
+        dataSet.setCircleHoleColor(Color.WHITE);
+        dataSet.setDrawValues(false);
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(Color.parseColor("#93C5FD")); // blue-300
+        dataSet.setFillAlpha(70);
+        dataSet.setHighLightColor(Color.parseColor("#94A3B8")); // slate-400
+        dataSet.setDrawHorizontalHighlightIndicator(false);
+
+        lineChart.setData(new LineData(dataSet));
+        lineChart.invalidate();
+
+        dismissChartLoading();
+    }
+
+    private static class ChartPoint {
+        Date date;
+        float score;
+
+        ChartPoint(Date date, float score) {
+            this.date = date;
+            this.score = score;
+        }
     }
 
     private void showChartLoading() {

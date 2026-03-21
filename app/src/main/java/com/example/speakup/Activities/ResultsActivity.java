@@ -358,12 +358,12 @@ public class ResultsActivity extends Utilities {
             updateBubbleUI(fb.get("language"), languageTv, contentLanguage, "Language", 15);
 
             TopicDetail summary = fb.get("overall");
-            if (summary != null) contentSummary.setText(summary.getSummary());
+            if (summary != null) contentSummary.setText(formatFeedbackText(summary.getSummary()));
         }
     }
 
     /**
-     * Updates a specific feedback category's UI components.
+     * Updates a specific feedback category's UI components and formats the summary text.
      *
      * @param detail  The {@link TopicDetail} containing the score and descriptive summary.
      * @param title   The TextView for the category's header title.
@@ -374,8 +374,23 @@ public class ResultsActivity extends Utilities {
     private void updateBubbleUI(TopicDetail detail, TextView title, TextView content, String label, int max) {
         if (detail != null) {
             title.setText(label + " (" + detail.getScore() + "/" + max + ")");
-            content.setText(detail.getSummary());
+            content.setText(formatFeedbackText(detail.getSummary()));
         }
+    }
+
+    /**
+     * Formats the AI feedback text by adding colored dots and spacing between sections.
+     *
+     * @param text The raw feedback text.
+     * @return The formatted text with symbols and newlines.
+     */
+    private String formatFeedbackText(String text) {
+        if (text == null) return "";
+        // Add green circle for "Keep" and red circle for "Improve"
+        // Also add an empty line between the sections
+        return text.replace("Keep:", "🟢 Keep:")
+                   .replace("Improve:", "\n\n🔴 Improve:")
+                   .trim();
     }
 
     /**
