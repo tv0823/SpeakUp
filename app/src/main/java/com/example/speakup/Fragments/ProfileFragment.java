@@ -63,12 +63,32 @@ import java.io.IOException;
 import java.util.Calendar;
 
 /**
- * A simple {@link Fragment} subclass.
- * create an instance of this fragment.
+ * Fragment that displays and manages the user's profile information.
+ * <p>
+ * This fragment provides several functionalities:
+ * <ul>
+ *     <li>Displays user details such as username and joining date.</li>
+ *     <li>Shows performance statistics, including the total number of recordings and average score.</li>
+ *     <li>Allows users to view and update their profile picture using the camera or gallery.</li>
+ *     <li>Provides navigation to Help & About and Reminders screens.</li>
+ *     <li>Handles user logout and session cleanup.</li>
+ * </ul>
+ * </p>
  */
 public class ProfileFragment extends Fragment {
+    /**
+     * Temporary ImageView used for profile picture preview in dialogs.
+     */
     private ImageView iV;
+
+    /**
+     * The unique identifier of the currently logged-in user.
+     */
     private String uid;
+
+    /**
+     * The absolute path to the current image file being processed for profile update.
+     */
     private String currentPath;
 
     /**
@@ -81,10 +101,21 @@ public class ProfileFragment extends Fragment {
      */
     private static final int REQUEST_IMAGE_CHOOSER = 9051;
 
+    /**
+     * Default constructor for fragment instantiation.
+     */
     public ProfileFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Inflates the fragment layout and initializes UI components and click listeners.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
@@ -137,6 +168,12 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Configures behavior after the view has been created, specifically the back button logic.
+     *
+     * @param view               The View returned by {@link #onCreateView}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -154,8 +191,9 @@ public class ProfileFragment extends Fragment {
     /**
      * Fetches and displays basic user information like username and join date.
      *
-     * @param userNameTv The TextView to display the username.
-     * @param dateTv     The TextView to display the join date.
+     * @param userNameTv   The TextView to display the username.
+     * @param dateTv       The TextView to display the join date.
+     * @param profileImage The ImageView to display the profile picture.
      */
     private void setUserData(TextView userNameTv, TextView dateTv, ShapeableImageView profileImage) {
         ProgressDialog pD = new ProgressDialog(requireActivity());
@@ -196,6 +234,12 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    /**
+     * Calculates and displays the total number of recordings and the average score of the user.
+     *
+     * @param recordingCountTv The TextView to display the recording count.
+     * @param avgScoreTv       The TextView to display the average score.
+     */
     private void setRecordingCountAndAvgScore(TextView recordingCountTv, TextView avgScoreTv) {
         refRecordings.child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -232,6 +276,11 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    /**
+     * Signs out the current user and redirects to the Welcome Screen.
+     *
+     * @param view The clicked view.
+     */
     public void logOut(View view) {
         refAuth.signOut();
 
@@ -248,6 +297,11 @@ public class ProfileFragment extends Fragment {
         requireActivity().finish();
     }
 
+    /**
+     * Fetches the user's profile picture from Firebase Storage and loads it using Glide.
+     *
+     * @param profilePicture The ShapeableImageView to load the image into.
+     */
     private void setProfilePicture(ShapeableImageView profilePicture) {
         StorageReference refFile = refST.child("User_Profiles/" + uid + ".jpg");
 
@@ -266,6 +320,11 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    /**
+     * Displays a dialog to allow the user to select or capture a new profile picture.
+     *
+     * @param profilePicture The main profile ImageView to be updated upon success.
+     */
     private void changeProfilePicture(ShapeableImageView profilePicture) {
         AlertDialog.Builder adb;
         LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.change_profile_picture_dialog, null);
@@ -300,6 +359,9 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    /**
+     * Checks for camera permissions when the fragment is resumed.
+     */
     @Override
     public void onResume() {
         super.onResume();
@@ -308,6 +370,13 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * Callback for the result from requesting permissions.
+     *
+     * @param requestCode  The request code.
+     * @param permissions  The requested permissions.
+     * @param grantResults The grant results for the corresponding permissions.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -318,6 +387,9 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * Initiates the process of capturing a photo with the camera or selecting one from the gallery.
+     */
     private void getPhoto() {
         String filename = "tempfile";
         File storageDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
@@ -360,6 +432,13 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * Handles the result of the image chooser (camera or gallery).
+     *
+     * @param requestCode The integer request code originally supplied to startActivityForResult().
+     * @param resultCode  The integer result code returned by the child activity through its setResult().
+     * @param data_back   An Intent, which can return result data to the caller.
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data_back) {
         super.onActivityResult(requestCode, resultCode, data_back);
@@ -399,6 +478,13 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * Uploads the selected profile picture to Firebase Storage and updates the UI on success.
+     *
+     * @param imageUri          The URI of the image to be uploaded.
+     * @param mainProfileView   The ImageView on the profile screen to be updated.
+     * @param dialog            The selection dialog to be dismissed on success.
+     */
     private void updateProfilePicture(Uri imageUri, ShapeableImageView mainProfileView, AlertDialog dialog) {
         ProgressDialog pD = new ProgressDialog(requireActivity());
         pD.setTitle("Uploading...");

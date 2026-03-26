@@ -35,10 +35,28 @@ import com.example.speakup.R;
 
 import java.util.Calendar;
 
+/**
+ * Activity for managing practice and simulation reminders.
+ * <p>
+ * This activity allows users to create, view, and delete reminders for their practice sessions.
+ * Reminders are scheduled using {@link AlarmManager} and persisted using {@link SharedPreferences}.
+ * It also handles runtime permissions for notifications on Android 13+.
+ * </p>
+ */
 public class RemindersActivity extends AppCompatActivity {
+    /**
+     * Request code for notification permission.
+     */
     private static final int NOTIFICATION_PERMISSION_CODE = 101;
+
+    /**
+     * Container layout where reminder rows are dynamically added.
+     */
     private LinearLayout reminderContainer;
 
+    /**
+     * Receiver to update the UI when a reminder is triggered or needs removal.
+     */
     private BroadcastReceiver uiUpdater = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -47,6 +65,13 @@ public class RemindersActivity extends AppCompatActivity {
         }
     };
 
+    /**
+     * Initializes the activity, sets the content view, and checks for notification permissions.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *                           previously being shut down then this Bundle contains the data it most
+     *                           recently supplied.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +89,9 @@ public class RemindersActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Checks and requests notification permissions for Android 13 (API 33) and above.
+     */
     private void checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this,
@@ -76,10 +104,18 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Finishes the activity and returns to the previous screen.
+     *
+     * @param view The clicked view.
+     */
     public void goBack(View view) {
         finish();
     }
 
+    /**
+     * Displays a dialog to create a new reminder, allowing selection of type, time, and date.
+     */
     private void showNewReminderDialog() {
         AlertDialog.Builder adb;
         LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.dialog_new_reminder, null);
@@ -144,6 +180,14 @@ public class RemindersActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Adds a new reminder row to the screen, including a category header if necessary.
+     *
+     * @param category    The category of the reminder (e.g., "Recordings").
+     * @param displayInfo Text description of the reminder.
+     * @param requestCode Unique identifier for the reminder.
+     * @return The request code of the added reminder.
+     */
     private int addNewReminderToScreen(String category, String displayInfo, final int requestCode) {
         if (reminderContainer.findViewWithTag(category) == null) {
             View headerView = getLayoutInflater().inflate(R.layout.item_category_header, reminderContainer, false);
@@ -181,6 +225,13 @@ public class RemindersActivity extends AppCompatActivity {
         return requestCode;
     }
 
+    /**
+     * Schedules a system alarm for the specified time.
+     *
+     * @param calSet      The time to trigger the alarm.
+     * @param text        The notification text.
+     * @param requestCode Unique identifier for the alarm.
+     */
     private void setAlarm(Calendar calSet, String text, int requestCode) {
         Intent intent = new Intent(this, AlarmReceiver.class);
         intent.putExtra("text", text);
@@ -193,6 +244,11 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Cancels an existing scheduled alarm.
+     *
+     * @param requestCode Unique identifier of the alarm to cancel.
+     */
     private void cancelAlarm(int requestCode) {
         Intent intent = new Intent(this, AlarmReceiver.class);
         PendingIntent pI = PendingIntent.getBroadcast(this, requestCode,
@@ -204,6 +260,11 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Removes a category header from the UI if it no longer contains any reminder rows.
+     *
+     * @param category The category header to check.
+     */
     private void cleanUpHeader(String category) {
         boolean hasItems = false;
         for (int i = 0; i < reminderContainer.getChildCount(); i++) {
@@ -220,6 +281,11 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Shows a {@link DatePickerDialog} to select a date for the reminder.
+     *
+     * @param dateField The EditText to populate with the selected date.
+     */
     private void showDatePicker(final EditText dateField) {
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
@@ -239,6 +305,13 @@ public class RemindersActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    /**
+     * Converts date and time strings into a {@link Calendar} object.
+     *
+     * @param dStr Date string in "dd/MM/yyyy" format.
+     * @param tStr Time string in "HH:mm" format.
+     * @return A configured Calendar instance.
+     */
     private Calendar getCalendar(String dStr, String tStr) {
         String[] d = dStr.split("/");
         String[] t = tStr.split(":");
@@ -247,6 +320,11 @@ public class RemindersActivity extends AppCompatActivity {
         return cal;
     }
 
+    /**
+     * Removes a reminder row from the UI container based on its request code.
+     *
+     * @param code The request code of the reminder to remove.
+     */
     private void removeRowByCode(int code) {
         for (int i = 0; i < reminderContainer.getChildCount(); i++) {
             View child = reminderContainer.getChildAt(i);
@@ -262,6 +340,14 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Persists reminder data into local {@link SharedPreferences}.
+     *
+     * @param code     Unique ID of the reminder.
+     * @param category Type of reminder.
+     * @param date     Selected date.
+     * @param time     Selected time.
+     */
     private void saveReminderToStorage(int code, String category, String date, String time) {
         SharedPreferences sp = getSharedPreferences("RemindersLog", MODE_PRIVATE);
         String currentData = sp.getString("list", "");
@@ -270,6 +356,10 @@ public class RemindersActivity extends AppCompatActivity {
         sp.edit().putString("list", newData).apply();
     }
 
+    /**
+     * Loads saved reminders from storage and displays them if they are still in the future.
+     * Removes expired reminders from storage.
+     */
     private void loadReminders() {
         SharedPreferences sp = getSharedPreferences("RemindersLog", MODE_PRIVATE);
         String data = sp.getString("list", "");
@@ -295,6 +385,11 @@ public class RemindersActivity extends AppCompatActivity {
         sp.edit().putString("list", remainingData.toString()).apply();
     }
 
+    /**
+     * Removes a specific reminder's data from {@link SharedPreferences}.
+     *
+     * @param code The unique identifier of the reminder to remove.
+     */
     private void removeFromStorage(int code) {
         SharedPreferences sp = getSharedPreferences("RemindersLog", MODE_PRIVATE);
         String data = sp.getString("list", "");
@@ -309,6 +404,9 @@ public class RemindersActivity extends AppCompatActivity {
         sp.edit().putString("list", newData.toString()).apply();
     }
 
+    /**
+     * Registers the UI update receiver when the activity starts.
+     */
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onStart() {
@@ -321,6 +419,9 @@ public class RemindersActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Unregisters the UI update receiver when the activity stops.
+     */
     @Override
     protected void onStop() {
         super.onStop();
@@ -329,6 +430,9 @@ public class RemindersActivity extends AppCompatActivity {
         } catch (IllegalArgumentException ignored) {}
     }
 
+    /**
+     * Reloads the reminders list when the activity resumes.
+     */
     @Override
     protected void onResume() {
         super.onResume();

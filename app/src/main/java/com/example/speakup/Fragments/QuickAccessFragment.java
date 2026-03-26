@@ -65,11 +65,30 @@ public class QuickAccessFragment extends Fragment {
      * The line chart view used to display performance data.
      */
     private LineChart lineChart;
+
+    /**
+     * Spinner for selecting the category of data to display in the chart.
+     */
     private Spinner spinnerChartCategory;
+
+    /**
+     * TextView displaying the average grade for the selected category.
+     */
     private TextView tvAvgGrade;
 
+    /**
+     * Reference to the user's recordings in the Firebase database.
+     */
     private DatabaseReference userRecordingsRef;
+
+    /**
+     * The unique identifier of the currently authenticated user.
+     */
     private String currentUserId;
+
+    /**
+     * Progress dialog shown while loading chart data.
+     */
     private ProgressDialog chartProgressDialog;
 
     private static final String CATEGORY_PERSONAL = "Personal Questions";
@@ -77,6 +96,9 @@ public class QuickAccessFragment extends Fragment {
     private static final String CATEGORY_PROJECT = "Project Questions";
     private static final String CATEGORY_SIMULATIONS = "Simulations";
 
+    /**
+     * Required empty public constructor for fragment instantiation.
+     */
     public QuickAccessFragment() {
         // Required empty public constructor
     }
@@ -91,12 +113,25 @@ public class QuickAccessFragment extends Fragment {
         return new QuickAccessFragment();
     }
 
+    /**
+     * Inflates the fragment layout.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view container.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_quick_access, container, false);
     }
 
+    /**
+     * Initializes UI components, sets up listeners, and triggers initial data loading.
+     *
+     * @param view               The View returned by {@link #onCreateView}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -124,6 +159,9 @@ public class QuickAccessFragment extends Fragment {
         });
     }
 
+    /**
+     * Cleans up resources when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -133,6 +171,11 @@ public class QuickAccessFragment extends Fragment {
         tvAvgGrade = null;
     }
 
+    /**
+     * Configures click listeners for the dashboard navigation buttons.
+     *
+     * @param view The root view of the fragment.
+     */
     private void setupNavigationButtons(View view) {
         MaterialButton btnPractice = view.findViewById(R.id.btnPracticeQuestions);
         if (btnPractice != null) {
@@ -237,6 +280,11 @@ public class QuickAccessFragment extends Fragment {
         reloadChartForSelection(categories.get(defaultIndex));
     }
 
+    /**
+     * Reloads chart data based on the selected category from the spinner.
+     *
+     * @param selected The name of the selected category.
+     */
     private void reloadChartForSelection(String selected) {
         if (lineChart == null) return;
         if (currentUserId == null || userRecordingsRef == null) {
@@ -302,6 +350,12 @@ public class QuickAccessFragment extends Fragment {
         });
     }
 
+    /**
+     * Fetches and renders chart data for recording scores, optionally filtered by question IDs.
+     *
+     * @param allowedQuestionIds Set of question IDs to include, or null for all recordings.
+     * @param label              Label for the data set.
+     */
     private void fetchAndRenderChartRecordingsOnly(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
         if (userRecordingsRef == null) return;
 
@@ -336,6 +390,9 @@ public class QuickAccessFragment extends Fragment {
         });
     }
 
+    /**
+     * Fetches and renders chart data for overall simulation scores.
+     */
     private void fetchAndRenderChartSimulationsOnly() {
         refSimulations.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -362,6 +419,12 @@ public class QuickAccessFragment extends Fragment {
         });
     }
 
+    /**
+     * Sorts and displays the provided data points on the line chart.
+     *
+     * @param pointsData List of data points to render.
+     * @param label      Label for the chart data set.
+     */
     private void renderChartPoints(ArrayList<ChartPoint> pointsData, String label) {
         if (!isAdded() || lineChart == null) return;
 
@@ -428,6 +491,9 @@ public class QuickAccessFragment extends Fragment {
         dismissChartLoading();
     }
 
+    /**
+     * Simple data class representing a single point on the performance chart.
+     */
     private static class ChartPoint {
         Date date;
         float score;
@@ -438,6 +504,9 @@ public class QuickAccessFragment extends Fragment {
         }
     }
 
+    /**
+     * Shows the chart loading progress dialog.
+     */
     private void showChartLoading() {
         if (!isAdded()) return;
         if (chartProgressDialog == null) {
@@ -448,6 +517,9 @@ public class QuickAccessFragment extends Fragment {
         if (!chartProgressDialog.isShowing()) chartProgressDialog.show();
     }
 
+    /**
+     * Dismisses the chart loading progress dialog.
+     */
     private void dismissChartLoading() {
         if (chartProgressDialog != null && chartProgressDialog.isShowing()) {
             chartProgressDialog.dismiss();

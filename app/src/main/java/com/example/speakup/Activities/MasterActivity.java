@@ -1,8 +1,10 @@
 package com.example.speakup.Activities;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.speakup.Fragments.ProfileFragment;
@@ -49,32 +51,50 @@ public class MasterActivity extends Utilities {
             loadFragment(new QuickAccessFragment());
         }
 
-        bottomNav.setOnItemSelectedListener(item -> {
-            // 1. Debouncing is good, but let's keep it tight (250-300ms)
-            if (SystemClock.elapsedRealtime() - lastClickTime < 300) {
-                return false;
+        bottomNav.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                // 1. Debouncing is good, but let's keep it tight (250-300ms)
+                if (SystemClock.elapsedRealtime() - lastClickTime < 300) {
+                    return false;
+                }
+                lastClickTime = SystemClock.elapsedRealtime();
+
+                Fragment selectedFragment = null;
+                int itemId = item.getItemId();
+
+                if (itemId == R.id.nav_home) {
+                    selectedFragment = new QuickAccessFragment();
+                } else if (itemId == R.id.nav_practice) {
+                    selectedFragment = TopicsFragment.newInstance("Practice Topics");
+                } else if (itemId == R.id.nav_simulations) {
+                    selectedFragment = new SimulationStartFragment();
+                } else if (itemId == R.id.nav_recordings) {
+                    selectedFragment = TopicsFragment.newInstance("Past Recordings");
+                } else if (itemId == R.id.nav_profile) {
+                    selectedFragment = new ProfileFragment();
+                }
+
+                return loadFragment(selectedFragment);
             }
-            lastClickTime = SystemClock.elapsedRealtime();
-
-            Fragment selectedFragment = null;
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.nav_home) {
-                selectedFragment = new QuickAccessFragment();
-            } else if (itemId == R.id.nav_practice) {
-                selectedFragment = TopicsFragment.newInstance("Practice Topics");
-            } else if (itemId == R.id.nav_simulations) {
-                selectedFragment = new SimulationStartFragment();
-            } else if (itemId == R.id.nav_recordings) {
-                selectedFragment = TopicsFragment.newInstance("Past Recordings");
-            } else if (itemId == R.id.nav_profile) {
-                selectedFragment = new ProfileFragment();
-            }
-
-            return loadFragment(selectedFragment);
         });
     }
 
+    /**
+     * Replaces the current fragment in the container with the provided fragment.
+     * <p>
+     * This method performs several checks before performing the transaction:
+     * <ul>
+     *     <li>It returns false if the provided fragment is null.</li>
+     *     <li>It avoids redundant reloads if the requested fragment is already active (including specific type checks for {@link TopicsFragment}).</li>
+     *     <li>It prevents transactions if the activity state has already been saved to avoid crashes.</li>
+     * </ul>
+     * When a valid fragment is loaded, the backstack is cleared to ensure top-level navigation behavior.
+     * </p>
+     *
+     * @param fragment The new {@link Fragment} to display.
+     * @return true if the fragment was successfully swapped; false otherwise.
+     */
     private boolean loadFragment(Fragment fragment) {
         if (fragment == null) return false;
 

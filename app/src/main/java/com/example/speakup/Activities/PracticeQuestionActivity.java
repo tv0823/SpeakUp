@@ -63,25 +63,55 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
+/**
+ * Activity responsible for handling a full speaking practice session.
+ *
+ * <p>This activity allows the user to:
+ * <ul>
+ *     <li>Listen to a question using Text-to-Speech (TTS)</li>
+ *     <li>Record their spoken answer</li>
+ *     <li>Pause and resume recordings</li>
+ *     <li>Play back their recording</li>
+ *     <li>Send the recording to AI (Gemini) for evaluation</li>
+ *     <li>Upload results and audio to Firebase</li>
+ * </ul>
+ *
+ * <p>It also supports video-based questions via YouTube integration.
+ *
+ * <p>Main components:
+ * <ul>
+ *     <li>{@link TtsHelper} - Handles text-to-speech playback</li>
+ *     <li>{@link RecordingManager} - Manages audio recording lifecycle</li>
+ *     <li>{@link MediaPlayer} - Plays recorded audio</li>
+ *     <li>{@link GeminiManager} - Sends audio for AI evaluation</li>
+ * </ul>
+ *
+ */
 public class PracticeQuestionActivity extends Utilities {
+    /** Request code for microphone permission */
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
+    // UI Components
     private TextView subTopicTitleTv, currentTimeTv, totalTimeTv, recordedTimeTv;
     private SeekBar ttsSeekBar, recordingSeekBar;
-    private ImageButton playPauseBtn, recordBtn, playRecordingBtn;
+    private ImageButton playPauseBtn, recordBtn, playRecordingBtn, deleteRecordingBtn;
     private FrameLayout linesContainer;
     private YouTubePlayerView youTubePlayerView;
 
+    // Logic & helpers
     private Handler timerHandler, recordingTimerHandler;
     private Question question;
     private TtsHelper tts;
     private RecordingManager recordingManager;
     private MediaPlayer mediaPlayer;
 
+    // State variables
     private int currentProgress = 0, totalSeconds = 0, maxProgress = 0, recordedSeconds = 0;
     private int pauseTimeInSeconds = -1;
 
+    /**
+     * Runnable that updates recording duration every second while recording.
+     */
     private final Runnable recordingTimerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -96,6 +126,9 @@ public class PracticeQuestionActivity extends Utilities {
         }
     };
 
+    /**
+     * Runnable that updates playback UI while audio is playing.
+     */
     private final Runnable playbackUpdaterRunnable = new Runnable() {
         @Override
         public void run() {
@@ -108,6 +141,9 @@ public class PracticeQuestionActivity extends Utilities {
         }
     };
 
+    /**
+     * Runnable that updates TTS progress bar during speech playback.
+     */
     private final Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
@@ -120,6 +156,9 @@ public class PracticeQuestionActivity extends Utilities {
         }
     };
 
+    /**
+     * Initializes activity, UI, and logic.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -139,6 +178,9 @@ public class PracticeQuestionActivity extends Utilities {
         checkPermissions();
     }
 
+    /**
+     * Initializes all UI components and listeners.
+     */
     private void initViews() {
         subTopicTitleTv = findViewById(R.id.subTopicTitleTv);
         currentTimeTv = findViewById(R.id.currentTimeTv);
@@ -149,7 +191,7 @@ public class PracticeQuestionActivity extends Utilities {
         playPauseBtn = findViewById(R.id.playPauseBtn);
         recordBtn = findViewById(R.id.recordBtn);
         playRecordingBtn = findViewById(R.id.playRecordingBtn);
-        ImageButton deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
+        deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
         linesContainer = findViewById(R.id.linesContainer);
         youTubePlayerView = findViewById(R.id.youtube_player_view);
 
@@ -177,6 +219,9 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Initializes core logic such as TTS and recording manager.
+     */
     private void initLogic() {
         timerHandler = new Handler();
         recordingTimerHandler = new Handler();
@@ -202,6 +247,11 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Handles record button behavior including start, pause, resume and finalize.
+     *
+     * @param view The clicked view
+     */
     public void recordBtn(View view) {
         if (recordingManager.isFinalized()) {
             Toast.makeText(this, "Recording finished. Delete to restart.", Toast.LENGTH_SHORT).show();
@@ -233,6 +283,11 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Plays or pauses the recorded audio.
+     *
+     * @param view The clicked view
+     */
     public void playRecording(View view) {
         if (recordingManager.isRecording()) {
             Toast.makeText(this, "Stop recording first", Toast.LENGTH_SHORT).show();
@@ -278,6 +333,9 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Shows confirmation dialog before deleting recording.
+     */
     private void confirmDeleteRecording() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Recording?")
@@ -292,6 +350,9 @@ public class PracticeQuestionActivity extends Utilities {
                 .setNegativeButton("Cancel", null).show();
     }
 
+    /**
+     * Resets UI and recording state after deletion.
+     */
     private void resetUI() {
         recordedSeconds = 0;
         pauseTimeInSeconds = -1;
@@ -303,6 +364,9 @@ public class PracticeQuestionActivity extends Utilities {
         linesContainer.removeAllViews();
     }
 
+    /**
+     * Adds a visual marker where recording was paused.
+     */
     private void addPauseLine() {
         pauseTimeInSeconds = recordedSeconds;
         View pauseLine = new View(this);
@@ -316,6 +380,9 @@ public class PracticeQuestionActivity extends Utilities {
         updateLinePosition();
     }
 
+    /**
+     * Updates position of pause marker on the timeline.
+     */
     private void updateLinePosition() {
         if (pauseTimeInSeconds == -1) return;
         linesContainer.post(new Runnable() {
@@ -334,6 +401,11 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Controls TTS playback (play/pause).
+     *
+     * @param view The clicked view
+     */
     public void playOrPause(View view) {
         if (tts.isSpeaking()) {
             tts.stop();
@@ -352,21 +424,33 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Updates TTS time labels.
+     */
     private void updateTimeLabels() {
         int sec = currentProgress / 10;
         currentTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", sec / 60, sec % 60));
         totalTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", totalSeconds / 60, totalSeconds % 60));
     }
 
+    /**
+     * Updates recorded time label.
+     */
     private void updateRecordedTimeLabel() {
         recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", recordedSeconds / 60, recordedSeconds % 60));
     }
 
+    /**
+     * Extracts question object from intent.
+     */
     private void handleIntent() {
         question = (Question) getIntent().getSerializableExtra("question");
         if (question != null) setupUIWithQuestionData();
     }
 
+    /**
+     * Populates UI with question data.
+     */
     private void setupUIWithQuestionData() {
         if (subTopicTitleTv != null) {
             subTopicTitleTv.setText(question.getSubTopic().equals("null") ? question.getTopic() : question.getSubTopic());
@@ -392,12 +476,18 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Requests audio recording permission if not granted.
+     */
     private void checkPermissions() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
         }
     }
 
+    /**
+     * Handles back press with confirmation if recording exists.
+     */
     private void setupBackPress() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -408,6 +498,9 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Shows exit confirmation dialog.
+     */
     private void showExitDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Exit Practice?")
@@ -421,6 +514,11 @@ public class PracticeQuestionActivity extends Utilities {
                 .setNegativeButton("Stay", null).show();
     }
 
+    /**
+     * Navigates back with validation.
+     *
+     * @param v The clicked view
+     */
     public void goBack(View v) {
         if (recordedSeconds > 0) showExitDialog();
         else { 
@@ -429,6 +527,11 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Sends recording to AI for evaluation.
+     *
+     * @param view The clicked view
+     */
     public void checkRecording(View view) {
         if (recordedSeconds > 0 && (recordingManager.isPaused() || recordingManager.isFinalized())) {
             if (recordingManager.isRecording()) {
@@ -492,6 +595,11 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Parses AI JSON response and prepares feedback.
+     *
+     * @param json AI response
+     */
     private void createRecordingToFirebase(String json) {
         Map<String, TopicDetail> aiFeedBack = new HashMap<>();
         try {
@@ -524,10 +632,19 @@ public class PracticeQuestionActivity extends Utilities {
         }
     }
 
+    /**
+     * Parses a feedback section from JSON.
+     *
+     * @param section JSON object
+     * @return formatted feedback string
+     */
     private String parseFeedbackSection(JSONObject section) throws JSONException {
         return "Keep: " + section.getString("keep") + "\nImprove: " + section.getString("improve");
     }
 
+    /**
+     * Prompts user to name the recording.
+     */
     private void showNamingDialog(final Map<String, TopicDetail> feedback, final int score) {
         final EditText eT = new EditText(this);
         eT.setHint("Enter recording name (e.g. My Practice 1)");
@@ -544,6 +661,9 @@ public class PracticeQuestionActivity extends Utilities {
             .show();
     }
 
+    /**
+     * Saves recording metadata and uploads audio.
+     */
     private void processFirebaseStorageAndDatabase(final String displayTitle, final Map<String, TopicDetail> feedback, final int score) {
         final String userId = refAuth.getCurrentUser().getUid();
         refRecordings.child(userId).child(question.getQuestionId()).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -564,6 +684,11 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Uploads audio file to Firebase Storage.
+     *
+     * @param rec Recording object
+     */
     private void uploadAudioFile(final Recording rec) {
         final String filePath = recordingManager.getFinalFilePath();
         StorageReference fileRef = refRecordingsMedia.child(rec.getUserId() + "/" + rec.getRecordingId() + ".aac");
@@ -599,6 +724,11 @@ public class PracticeQuestionActivity extends Utilities {
             });
     }
 
+    /**
+     * Initializes YouTube player for video questions.
+     *
+     * @param videoUrl YouTube URL
+     */
     private void setupYouTubePlayer(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
         if (videoId.isEmpty()) return;
@@ -611,6 +741,12 @@ public class PracticeQuestionActivity extends Utilities {
         });
     }
 
+    /**
+     * Extracts YouTube video ID from URL.
+     *
+     * @param videoUrl URL string
+     * @return video ID
+     */
     private String extractVideoId(String videoUrl) {
         if (videoUrl == null || videoUrl.trim().isEmpty()) return "";
         String videoId = "";
@@ -621,6 +757,9 @@ public class PracticeQuestionActivity extends Utilities {
         return videoId.trim();
     }
 
+    /**
+     * Cleans up resources to prevent memory leaks.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

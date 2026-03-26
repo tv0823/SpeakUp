@@ -48,15 +48,6 @@ public class User {
     }
 
     /**
-     * Sets the display name of the user.
-     *
-     * @param username The new username.
-     */
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    /**
      * Default constructor required for calls to DataSnapshot.getValue(User.class).
      */
     public User() {}

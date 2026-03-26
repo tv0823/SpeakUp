@@ -69,6 +69,9 @@ public class QuestionsGeneralFragment extends Fragment {
      */
     private ArrayList<Question> allQuestionsList;
 
+    /**
+     * Progress dialog shown while fetching data from Firebase.
+     */
     private ProgressDialog pD;
 
     /**

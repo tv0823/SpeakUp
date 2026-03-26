@@ -48,15 +48,6 @@ public class TopicDetail implements Serializable {
     }
 
     /**
-     * Sets the score achieved for the topic/category.
-     *
-     * @param score The score to set.
-     */
-    public void setScore(int score) {
-        this.score = score;
-    }
-
-    /**
      * Gets the summary or feedback for the topic/category.
      *
      * @return The summary text.
@@ -65,12 +56,4 @@ public class TopicDetail implements Serializable {
         return summary;
     }
 
-    /**
-     * Sets the summary or feedback for the topic/category.
-     *
-     * @param summary The summary text to set.
-     */
-    public void setSummary(String summary) {
-        this.summary = summary;
-    }
 }
