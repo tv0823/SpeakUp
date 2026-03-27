@@ -1,11 +1,11 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refRecordings;
-import static com.example.speakup.FBRef.refRecordingsMedia;
-import static com.example.speakup.Prompts.PERSONAL_PROMPT;
-import static com.example.speakup.Prompts.PROJECT_PROMPT;
-import static com.example.speakup.Prompts.VIDEO_CLIPS_PROMPT;
+import static com.example.speakup.Utils.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refRecordings;
+import static com.example.speakup.Utils.FBRef.refRecordingsMedia;
+import static com.example.speakup.Utils.Prompts.PERSONAL_PROMPT;
+import static com.example.speakup.Utils.Prompts.PROJECT_PROMPT;
+import static com.example.speakup.Utils.Prompts.VIDEO_CLIPS_PROMPT;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -42,7 +42,7 @@ import com.example.speakup.Objects.TopicDetail;
 import com.example.speakup.R;
 import com.example.speakup.RecordingManager;
 import com.example.speakup.TtsHelper;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;

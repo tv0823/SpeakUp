@@ -1,10 +1,10 @@
 package com.example.speakup.Fragments;
 
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refQuestionMedia;
-import static com.example.speakup.FBRef.refQuestions;
-import static com.example.speakup.FBRef.refRecordings;
-import static com.example.speakup.FBRef.refSimulations;
+import static com.example.speakup.Utils.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refQuestionMedia;
+import static com.example.speakup.Utils.FBRef.refQuestions;
+import static com.example.speakup.Utils.FBRef.refRecordings;
+import static com.example.speakup.Utils.FBRef.refSimulations;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -42,8 +42,10 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A fragment that displays a sortable grid of recordings for a specific category.
@@ -53,7 +55,7 @@ import java.util.Map;
  * <ul>
  *     <li>Sorting by Grade (Score) or Date Recorded.</li>
  *     <li>Toggling sort direction (Ascending vs. Descending).</li>
- *     <li>Navigating to the {@link ResultsActivity} on click.</li>
+ *     <li>Navigating to the {@link ResultsActivity} or {@link SimulationResultsActivity} on click.</li>
  *     <li>Renaming recordings via long-press.</li>
  * </ul>
  * </p>
@@ -84,6 +86,10 @@ public class RecordingsGeneralFragment extends Fragment {
      * List of all recordings fetched from Firebase that belong to the current category.
      */
     private ArrayList<Recording> allRecordingsList;
+
+    /**
+     * List of all simulations fetched from Firebase.
+     */
     private ArrayList<Simulation> allSimulationsList;
 
     /**
@@ -92,7 +98,7 @@ public class RecordingsGeneralFragment extends Fragment {
     private String currentUserId;
 
     /**
-     * The category identifier used to filter recordings (e.g., "Personal Questions").
+     * The category identifier used to filter recordings (e.g., "Personal Questions" or "Simulation").
      */
     private String categoryPath;
 
@@ -102,11 +108,13 @@ public class RecordingsGeneralFragment extends Fragment {
      */
     private boolean isAscending = false;
 
+    /**
+     * Progress dialog shown while fetching data from Firebase.
+     */
     private ProgressDialog pD;
 
     /**
-     * Maps Firebase questionId -> normalized image key used in Firebase Storage (e.g., from subTopic name).
-     * This is needed because your stored images are named by topic/subTopic, not by questionId.
+     * Maps Firebase questionId -> normalized image key used in Firebase Storage.
      */
     private Map<String, String> questionIdToImageKey;
 
@@ -189,6 +197,12 @@ public class RecordingsGeneralFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Configures behavior after the view has been created, specifically the back button logic.
+     *
+     * @param view               The View returned by {@link #onCreateView}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -240,81 +254,96 @@ public class RecordingsGeneralFragment extends Fragment {
     }
 
     /**
-     * Fetches recording data from Firebase Realtime Database.
-     * <p>
-     * It performs a multistep fetch:
-     * 1. Listens for all recordings of the current user.
-     * 2. For each question that has recordings, checks if that question belongs to the current {@link #categoryPath}.
-     * 3. Aggregates all valid recordings into {@link #allRecordingsList} and triggers a UI update.
-     * </p>
+     * <p>This method performs a two-step data retrieval process:</p>
+     * <ol>
+     *     <li>
+     *         Retrieves all questions under the current {@link #categoryPath} and builds a set of
+     *         allowed question IDs. During this step, it also prepares a mapping between
+     *         question IDs and their corresponding image keys for later use.
+     *     </li>
+     *     <li>
+     *         Fetches all recordings for the current user and filters them by checking whether
+     *         their question ID exists in the allowed set.
+     *     </li>
+     * </ol>
+     *
+     * <p>All matching recordings are stored in {@link #allRecordingsList}, after which the UI
+     * is updated by applying sorting and displaying the results.</p>
+     *
+     * <p>If no recordings are found for the selected category, a toast message is shown.</p>
      */
     private void fetchRecordingsFromFirebase() {
         if (categoryPath == null || currentUserId == null) {
-            if (pD != null) pD.dismiss(); // Dismiss if we can't even start
+            if (pD != null) pD.dismiss();
             return;
         }
 
-        refRecordings.child(currentUserId).addValueEventListener(new ValueEventListener() {
+        // get allowed question IDs
+        refQuestions.child(categoryPath).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot userSnapshot) {
-                // Dismiss If the user has no recordings at all
-                if (!userSnapshot.exists() || !userSnapshot.hasChildren()) {
-                    if (pD != null) pD.dismiss();
-                    Toast.makeText(getContext(), "No recordings found", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+            public void onDataChange(@NonNull DataSnapshot catSnapshot) {
 
-                allRecordingsList.clear();
+                Set<String> allowedIds = new HashSet<>();
 
-                for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
-                    String qId = questionSnapshot.getKey();
+                for (DataSnapshot topicSnapshot : catSnapshot.getChildren()) {
+                    for (DataSnapshot qSnap : topicSnapshot.getChildren()) {
+                        String qId = qSnap.getKey();
+                        if (qId != null) {
+                            allowedIds.add(qId);
 
-                    refQuestions.child(categoryPath).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot catSnapshot) {
-                            if (pD != null && pD.isShowing()) pD.dismiss();
+                            // build image key
+                            Question q = qSnap.getValue(Question.class);
+                            if (q != null) {
+                                String sub = q.getSubTopic();
+                                if (sub == null || sub.equals("null")) sub = q.getTopic();
 
-                            boolean belongsToCategory = false;
-                            for (DataSnapshot topicSnapshot : catSnapshot.getChildren()) {
-                                if (topicSnapshot.hasChild(qId)) {
-                                    belongsToCategory = true;
-
-                                    // Fetch question object so we can build the image name from subTopic (not questionId).
-                                    Question q = topicSnapshot.child(qId).getValue(Question.class);
-                                    if (q != null) {
-                                        String sub = q.getSubTopic();
-                                        if (sub == null || "null".equals(sub)) sub = q.getTopic();
-                                        if (sub != null) {
-                                            String imageKey = sub.split(" Set")[0]
-                                                    .replace(' ', '_')
-                                                    .toLowerCase();
-                                            questionIdToImageKey.put(qId, imageKey);
-                                        }
-                                    }
-                                    break;
+                                if (sub != null) {
+                                    String key = sub.split(" Set")[0]
+                                            .replace(' ', '_')
+                                            .toLowerCase();
+                                    questionIdToImageKey.put(qId, key);
                                 }
                             }
+                        }
+                    }
+                }
 
-                            if (belongsToCategory) {
-                                for (DataSnapshot recordingSnapshot : questionSnapshot.getChildren()) {
-                                    Recording recording = recordingSnapshot.getValue(Recording.class);
-                                    if (recording != null) {
-                                        allRecordingsList.add(recording);
-                                    }
-                                }
-                                applySortAndDisplay(toggleGroup.getCheckedButtonId() == R.id.btnGrade);
+                // fetch recordings once
+                refRecordings.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot userSnapshot) {
+                        if (pD != null) pD.dismiss();
+
+                        allRecordingsList.clear();
+
+                        for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
+                            String qId = questionSnapshot.getKey();
+                            if (!allowedIds.contains(qId)) continue;
+
+                            for (DataSnapshot recSnap : questionSnapshot.getChildren()) {
+                                Recording rec = recSnap.getValue(Recording.class);
+                                if (rec != null) allRecordingsList.add(rec);
                             }
                         }
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            if (pD != null) pD.dismiss(); // Dismiss on error
+
+                        if (allRecordingsList.isEmpty()) {
+                            Toast.makeText(getContext(), "No recordings found", Toast.LENGTH_SHORT).show();
+                            return;
                         }
-                    });
-                }
+
+                        applySortAndDisplay(true);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        if (pD != null) pD.dismiss();
+                    }
+                });
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (pD != null) pD.dismiss(); // Dismiss on error
+                if (pD != null) pD.dismiss();
             }
         });
     }
@@ -322,7 +351,7 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Sorts the recording list based on the chosen criteria and direction, then refreshes the UI.
      * <p>
-     * Uses a Selection Sort implementation to reorder {@link #allRecordingsList}.
+     * Uses a Selection Sort implementation to reorder {@link #allRecordingsList} or {@link #allSimulationsList}.
      * </p>
      *
      * @param sortByGrade If true, sorts by score. If false, sorts by recording date.
@@ -375,6 +404,11 @@ public class RecordingsGeneralFragment extends Fragment {
         displayRecordings();
     }
 
+    /**
+     * Sorts the simulation list based on the chosen criteria and direction, then refreshes the UI.
+     *
+     * @param sortByGrade If true, sorts by score. If false, sorts by completion date.
+     */
     private void applySortAndDisplaySimulation(boolean sortByGrade) {
         if (allSimulationsList == null || allSimulationsList.isEmpty()) return;
         int n = allSimulationsList.size();
@@ -430,6 +464,9 @@ public class RecordingsGeneralFragment extends Fragment {
         }
     }
 
+    /**
+     * Clears and repopulates the two-column grid with simulation cards.
+     */
     private void displaySimulations() {
         if (columnLeft == null || columnRight == null) return;
         columnLeft.removeAllViews();
@@ -443,9 +480,6 @@ public class RecordingsGeneralFragment extends Fragment {
 
     /**
      * Inflates a recording card view and adds it to the specified container.
-     * <p>
-     * Sets up click listeners for viewing results and long-press listeners for renaming.
-     * </p>
      *
      * @param container The layout column to add the card to.
      * @param recording The recording data to display on the card.
@@ -474,6 +508,12 @@ public class RecordingsGeneralFragment extends Fragment {
         container.addView(cardView);
     }
 
+    /**
+     * Inflates a simulation card view and adds it to the specified container.
+     *
+     * @param container  The layout column to add the card to.
+     * @param simulation The simulation data to display on the card.
+     */
     private void addSimulationCard(LinearLayout container, Simulation simulation) {
         View cardView = getLayoutInflater().inflate(R.layout.item_topic_card, container, false);
         TextView titleText = cardView.findViewById(R.id.topicTitleText);
@@ -491,6 +531,9 @@ public class RecordingsGeneralFragment extends Fragment {
         container.addView(cardView);
     }
 
+    /**
+     * Fetches simulation data from Firebase Realtime Database for the current user.
+     */
     private void fetchSimulationsFromFirebase() {
         if (currentUserId == null) {
             if (pD != null) pD.dismiss();
@@ -525,6 +568,11 @@ public class RecordingsGeneralFragment extends Fragment {
         });
     }
 
+    /**
+     * Resolves individual recordings for a simulation and opens the results activity.
+     *
+     * @param simulation The simulation object to view results for.
+     */
     private void openSimulationResult(Simulation simulation) {
         if (currentUserId == null) return;
         if (simulation.getRecordingsIds() == null || simulation.getRecordingsIds().isEmpty()) {
@@ -569,6 +617,13 @@ public class RecordingsGeneralFragment extends Fragment {
         });
     }
 
+    /**
+     * Searches for a recording by ID within the user's recordings snapshot.
+     *
+     * @param userRecordingsSnapshot The snapshot containing all of the user's recordings.
+     * @param recordingId            The ID of the recording to find.
+     * @return The resolved Recording object, or null if not found.
+     */
     private Recording findRecordingById(DataSnapshot userRecordingsSnapshot, String recordingId) {
         for (DataSnapshot questionNode : userRecordingsSnapshot.getChildren()) {
             DataSnapshot recNode = questionNode.child(recordingId);
@@ -671,6 +726,11 @@ public class RecordingsGeneralFragment extends Fragment {
         }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.error_image));
     }
 
+    /**
+     * Loads a generic simulation image from Firebase Storage for simulation cards.
+     *
+     * @param imageView The target ImageView.
+     */
     private void loadSimulationCardImage(ImageView imageView) {
         StorageReference refFile = refQuestionMedia.child("simulation.jpg");
         refFile.getDownloadUrl().addOnSuccessListener(uri -> {
@@ -684,6 +744,4 @@ public class RecordingsGeneralFragment extends Fragment {
             }
         }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.placeholder));
     }
-    
-    
 }

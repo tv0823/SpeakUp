@@ -13,7 +13,7 @@ import androidx.annotation.Nullable;
 
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 
 import java.util.ArrayList;
 

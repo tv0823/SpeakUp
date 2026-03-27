@@ -1,6 +1,6 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refAuth;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -16,7 +16,7 @@ import androidx.annotation.NonNull;
 
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
@@ -25,7 +25,6 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
-import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Activity handling the user login process.

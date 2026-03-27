@@ -1,7 +1,7 @@
 package com.example.speakup.Fragments;
 
-import static com.example.speakup.FBRef.refQuestionMedia;
-import static com.example.speakup.FBRef.refQuestions;
+import static com.example.speakup.Utils.FBRef.refQuestionMedia;
+import static com.example.speakup.Utils.FBRef.refQuestions;
 
 import android.app.ProgressDialog;
 import android.content.Intent;

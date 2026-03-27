@@ -1,8 +1,8 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refUserProfiles;
-import static com.example.speakup.FBRef.refUsers;
+import static com.example.speakup.Utils.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refUserProfiles;
+import static com.example.speakup.Utils.FBRef.refUsers;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -24,7 +24,7 @@ import androidx.core.content.FileProvider;
 
 import com.example.speakup.Objects.User;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;

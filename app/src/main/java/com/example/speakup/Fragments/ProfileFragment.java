@@ -1,10 +1,10 @@
 package com.example.speakup.Fragments;
 
 import static android.content.Context.MODE_PRIVATE;
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refRecordings;
-import static com.example.speakup.FBRef.refST;
-import static com.example.speakup.FBRef.refUsers;
+import static com.example.speakup.Utils.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refRecordings;
+import static com.example.speakup.Utils.FBRef.refST;
+import static com.example.speakup.Utils.FBRef.refUsers;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -45,7 +45,7 @@ import com.example.speakup.Activities.WelcomeScreenActivity;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.User;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;

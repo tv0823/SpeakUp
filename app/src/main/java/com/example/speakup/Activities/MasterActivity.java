@@ -5,14 +5,13 @@ import androidx.fragment.app.FragmentManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.example.speakup.Fragments.ProfileFragment;
 import com.example.speakup.Fragments.SimulationStartFragment;
 import com.example.speakup.Fragments.TopicsFragment;
 import com.example.speakup.Fragments.QuickAccessFragment;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import androidx.fragment.app.Fragment;
 

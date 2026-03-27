@@ -34,12 +34,12 @@
             android:exported="false" />
 
         <receiver
-            android:name=".NetworkChangeReceiver"
+            android:name=".Receivers.NetworkChangeReceiver"
             android:enabled="true"
             android:exported="true"
             tools:ignore="Instantiatable" />
 
-        <receiver android:name=".AlarmReceiver"
+        <receiver android:name=".Receivers.AlarmReceiver"
             android:enabled="true"
             android:exported="false" />
 

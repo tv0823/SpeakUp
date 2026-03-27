@@ -1,4 +1,4 @@
-package com.example.speakup;
+package com.example.speakup.Utils;
 
 /**
  * A utility class that holds the constant strings for AI prompts and JSON schemas.

@@ -18,14 +18,38 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+/**
+ * A fragment that displays a tabbed interface for different question categories or past recordings.
+ * <p>
+ * This fragment uses a {@link ViewPager2} and a {@link TabLayout} to allow users to switch between
+ * "Personal Questions", "Project Questions", "Video Clip Questions", and optionally "Simulation" (for past recordings).
+ * It dynamically configures its content based on whether it's used for practice or viewing history.
+ * </p>
+ */
 public class TopicsFragment extends Fragment {
+    /**
+     * Argument key for the fragment type.
+     */
     private static final String ARG_TYPE = "arg_type";
+
+    /**
+     * The type of the screen (e.g., "Practice Topics" or "Past Recordings").
+     */
     private String type;
 
+    /**
+     * Default constructor for fragment instantiation.
+     */
     public TopicsFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Factory method to create a new instance of this fragment with a specific type.
+     *
+     * @param type The type of the screen, determining which categories to show.
+     * @return A new instance of fragment TopicsFragment.
+     */
     public static TopicsFragment newInstance(String type) {
         TopicsFragment fragment = new TopicsFragment();
         Bundle args = new Bundle();
@@ -34,14 +58,24 @@ public class TopicsFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Gets the current type of the fragment.
+     *
+     * @return The screen type string.
+     */
     public String getType() {
         // If 'type' is null, try to get it from arguments just in case
         if (type == null && getArguments() != null) {
-            type = getArguments().getString("arg_type");
+            type = getArguments().getString(ARG_TYPE);
         }
         return type;
     }
 
+    /**
+     * Initializes the fragment and retrieves the type argument.
+     *
+     * @param savedInstanceState If the fragment is being re-created from a previous saved state.
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +85,14 @@ public class TopicsFragment extends Fragment {
         }
     }
 
+    /**
+     * Inflates the fragment layout.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view container.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -58,6 +100,13 @@ public class TopicsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_topics, container, false);
     }
 
+    /**
+     * Initializes UI components, sets up the ViewPager2 adapter, and configures the TabLayout.
+     * Also sets up the system back button logic to navigate to the home fragment.
+     *
+     * @param view               The View returned by {@link #onCreateView}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);

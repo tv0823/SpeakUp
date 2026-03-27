@@ -1,9 +1,9 @@
 package com.example.speakup.Fragments;
 
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refQuestions;
-import static com.example.speakup.FBRef.refRecordings;
-import static com.example.speakup.FBRef.refSimulations;
+import static com.example.speakup.Utils.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refQuestions;
+import static com.example.speakup.Utils.FBRef.refRecordings;
+import static com.example.speakup.Utils.FBRef.refSimulations;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import com.example.speakup.Activities.MasterActivity;
 import com.example.speakup.Activities.RemindersActivity;
+import com.example.speakup.Objects.ChartPoint;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.Simulation;
 import com.example.speakup.R;
@@ -47,7 +48,6 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -431,7 +431,7 @@ public class QuickAccessFragment extends Fragment {
         Collections.sort(pointsData, new Comparator<ChartPoint>() {
             @Override
             public int compare(ChartPoint o1, ChartPoint o2) {
-                return o1.date.compareTo(o2.date);
+                return o1.getDate().compareTo(o2.getDate());
             }
         });
 
@@ -452,7 +452,7 @@ public class QuickAccessFragment extends Fragment {
             // Keep the last 30 points
             int start = Math.max(0, pointsData.size() - 30);
             for (int i = start; i < pointsData.size(); i++) {
-                entries.add(new Entry(i - start, pointsData.get(i).score));
+                entries.add(new Entry(i - start, pointsData.get(i).getScore()));
             }
         }
 
@@ -461,7 +461,7 @@ public class QuickAccessFragment extends Fragment {
                 tvAvgGrade.setText("--%");
             } else {
                 float sum = 0f;
-                for (ChartPoint p : pointsData) sum += p.score;
+                for (ChartPoint p : pointsData) sum += p.getScore();
                 int avg = Math.round(sum / pointsData.size());
                 tvAvgGrade.setText(avg + "%");
             }
@@ -489,19 +489,6 @@ public class QuickAccessFragment extends Fragment {
         lineChart.invalidate();
 
         dismissChartLoading();
-    }
-
-    /**
-     * Simple data class representing a single point on the performance chart.
-     */
-    private static class ChartPoint {
-        Date date;
-        float score;
-
-        ChartPoint(Date date, float score) {
-            this.date = date;
-            this.score = score;
-        }
     }
 
     /**

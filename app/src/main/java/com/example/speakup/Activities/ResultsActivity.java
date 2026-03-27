@@ -1,8 +1,6 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refAuth;
-import static com.example.speakup.FBRef.refRecordings;
-import static com.example.speakup.FBRef.refRecordingsMedia;
+import static com.example.speakup.Utils.FBRef.refRecordingsMedia;
 
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -23,12 +21,9 @@ import androidx.annotation.NonNull;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.TopicDetail;
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.StorageReference;
 

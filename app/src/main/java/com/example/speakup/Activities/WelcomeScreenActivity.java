@@ -1,6 +1,6 @@
 package com.example.speakup.Activities;
 
-import static com.example.speakup.FBRef.refAuth;
+import static com.example.speakup.Utils.FBRef.refAuth;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,7 +9,7 @@ import android.view.View;
 
 
 import com.example.speakup.R;
-import com.example.speakup.Utilities;
+import com.example.speakup.Utils.Utilities;
 
 /**
  * Activity representing the welcome screen of the application.

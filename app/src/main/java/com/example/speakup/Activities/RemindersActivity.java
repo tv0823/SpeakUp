@@ -30,7 +30,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.example.speakup.AlarmReceiver;
+import com.example.speakup.Receivers.AlarmReceiver;
 import com.example.speakup.R;
 
 import java.util.Calendar;
