@@ -41,22 +41,6 @@ public class Prompts {
                     "  \"required\": [\"topicDevelopment\", \"delivery\", \"vocabulary\", \"language\", \"totalSectionScore\", \"feedback\"]\n" +
                     "}";
 
-    /**
-     * Main JSON schema for the entire exam grading.
-     * Combines multiple {@link #COMPONENT_SCHEMA} objects for each part of the COBE exam
-     * and includes a final overall grade.
-     */
-    public static final String MAIN_EXAM_SCHEMA =
-            "{\n" +
-                    "  \"type\": \"object\",\n" +
-                    "  \"properties\": {\n" +
-                    "    \"personalResponse\": " + COMPONENT_SCHEMA + ",\n" +
-                    "    \"projectPresentation\": " + COMPONENT_SCHEMA + ",\n" +
-                    "    \"videoClipResponse\": " + COMPONENT_SCHEMA + ",\n" +
-                    "    \"finalExamGrade\": {\"type\": \"number\"}\n" +
-                    "  }\n" +
-                    "}";
-
     // --- MEGA PROMPT INSTRUCTIONS ---
 
     /**
@@ -93,13 +77,19 @@ public class Prompts {
                     "   - 25-0: Mostly incorrect, uses languages other than English.\n" +
                     "\nGeneral Tone: Be soft, encouraging, and constructive. Focus on content quality first.\n";
 
+    // Rules for empty audio
+    public static final String EMPTY_AUDIO_RULES = "\nEMPTY AUDIO RULE: If a recording contains no intelligible speech (empty/silence), set:\n" +
+            "- topicDevelopment, delivery, vocabulary, language, totalSectionScore = 0\n" +
+            "- feedback.overallSummary: \"No speech detected.\"\n" +
+            "- feedback.*.keep and feedback.*.improve must mention no speech was detected.\n";
+
     /**
      * AI prompt for evaluating the 'Personal Response' section of the exam.
      */
     public static final String PERSONAL_PROMPT =
             "Task: Grade the 12th grade student on the 'Personal Response' recording of the COBE exam.\n" +
                     "Verify the answer logic thoroughly before grading.\n" +
-                    RUBRIC_INSTRUCTIONS + "\n" +
+                    RUBRIC_INSTRUCTIONS + "\n" + EMPTY_AUDIO_RULES +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
@@ -112,7 +102,7 @@ public class Prompts {
     public static final String PROJECT_PROMPT =
             "Task: Grade the 12th grade student on the 'Project Presentation' recording of the COBE exam.\n" +
                     "Ensure the student explains the research process and personal insights. Scrutinize the content for depth.\n" +
-                    RUBRIC_INSTRUCTIONS + "\n" +
+                    RUBRIC_INSTRUCTIONS + "\n" + EMPTY_AUDIO_RULES +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
@@ -126,19 +116,25 @@ public class Prompts {
             "Task: Grade the 12th grade student on the 'Video Clip Responses' (Part C) recording.\n" +
                     "Crucial: Answers MUST be based on the spoken text from the video clip. Deduct Topic Development points if inaccurate.\n" +
                     "Be softer on Delivery here as recalling video facts may cause minor pauses.\n" +
-                    RUBRIC_INSTRUCTIONS + "\n" +
+                    RUBRIC_INSTRUCTIONS + "\n" + EMPTY_AUDIO_RULES +
                     "Instructions: Provide a score for each category and a specific summary for Topic Development, Delivery, Vocabulary, and Language.\n" +
                     "Identify what to 'keep' (strengths) and what to 'improve' (weaknesses) for EACH category.\n" +
                     "Return the result as a JSON object matching this schema:\n" + COMPONENT_SCHEMA + "\n" +
                     "This is the question: ";
 
+
     /**
-     * AI prompt for aggregating all recorded sections to calculate the final COBE exam grade.
-     * Specifies equal weighting (25%) for each section.
+     * Master prompt for all 4 recordings. Placeholders {RECORDINGS_DETAILS} and {CATEGORY_PROMPTS} will be replaced
+     * in SimulationsActivity for each simulation run.
      */
-    public static final String ALL_RECORDINGS_PROMPT =
-            "Task: Calculate the final COBE exam grade.\n" +
-                    "Weights: Personal (25%), Project (25%), Video Clip (25%), and Other (25%).\n" +
-                    "Aggregate the data from all sections. Ensure each recording has its own detailed category-by-category feedback.\n" +
-                    "Return the result as a JSON object matching this schema:\n" + MAIN_EXAM_SCHEMA;
+    public static final String SIMULATION_MASTER_PROMPT = "You are grading a COBE simulation.\n\n" +
+            "There are exactly 4 audio recordings below, in this exact order:\n" +
+            "{RECORDINGS_DETAILS}\n" +
+            "Category-specific grading instructions for recordings 1..4:\n" +
+            "{CATEGORY_PROMPTS}\n" +
+            EMPTY_AUDIO_RULES + "\n" +
+            "Return ONLY valid JSON in this exact format:\n" +
+            "{ \"recordings\": [ obj1, obj2, obj3, obj4 ] }\n" +
+            "Where each obj1..obj4 is the JSON object described in the corresponding category prompt (i.e., it matches COMPONENT_SCHEMA).\n" +
+            "Do NOT wrap in markdown and do NOT include any extra text.";
 }

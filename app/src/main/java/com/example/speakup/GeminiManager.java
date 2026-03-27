@@ -62,7 +62,7 @@ public class GeminiManager {
     }
 
     /**
-     * Sends a text prompt along with a file (blob) to the Gemini AI model.
+     * Sends a text prompt along with a single file (blob) to the Gemini AI model.
      * <p>
      * This method constructs a multi-part content request and executes it asynchronously.
      * The result or error is returned through the provided {@link GeminiCallback}.
@@ -101,6 +101,18 @@ public class GeminiManager {
                 });
     }
 
+    /**
+     * Sends a text prompt along with multiple files (blobs) to the Gemini AI model.
+     * <p>
+     * This method iterates through the provided byte arrays and MIME types to construct
+     * a multi-part content request and executes it asynchronously.
+     * </p>
+     *
+     * @param prompt     The text prompt describing the task for the AI.
+     * @param filesBytes A list of byte arrays, each representing a file's data.
+     * @param mimeType   A list of MIME types corresponding to each file in filesBytes.
+     * @param callback   The callback to handle success or failure of the AI request.
+     */
     public void sendTextWithFilesPrompt(String prompt, ArrayList<byte[]> filesBytes, ArrayList<String> mimeType, GeminiCallback callback) {
         List<Part> parts = new ArrayList<>();
         parts.add(new TextPart(prompt));
