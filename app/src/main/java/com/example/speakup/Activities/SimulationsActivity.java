@@ -156,10 +156,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         initLogic();
         checkPermissions();
 
-        boolean autoStart = getIntent() != null && getIntent().getBooleanExtra("AUTO_START", false);
-        if (autoStart) {
-            fetchRandomQuestions();
-        }
+        fetchRandomQuestions();
     }
 
     /**
@@ -168,7 +165,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     private void initViews() {
         questionsContainer = findViewById(R.id.questionsContainer);
         timerLayout = findViewById(R.id.timerLayout);
-        Button btnStartSim = findViewById(R.id.btnStartSim);
         btnNext = findViewById(R.id.btnNext);
         btnPrevious = findViewById(R.id.btnPrevious);
         btnFinishSim = findViewById(R.id.btnFinishSim);
@@ -197,7 +193,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             }
         });
 
-        btnStartSim.setOnClickListener(this);
         btnNext.setOnClickListener(this);
         btnPrevious.setOnClickListener(this);
         btnFinishSim.setOnClickListener(this);
@@ -380,9 +375,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     @Override
     public void onClick(View v) {
         int id = v.getId();
-        if (id == R.id.btnStartSim) {
-            fetchRandomQuestions();
-        } else if (id == R.id.btnNext) {
+        if (id == R.id.btnNext) {
             changeQuestion(1);
         } else if (id == R.id.btnPrevious) {
             changeQuestion(-1);

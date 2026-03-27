@@ -54,7 +54,6 @@ public class SimulationStartFragment extends Fragment {
         Button btnStartSim = view.findViewById(R.id.btnStartSim);
         btnStartSim.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), SimulationsActivity.class);
-            intent.putExtra("AUTO_START", true);
             startActivity(intent);
         });
 
