@@ -66,7 +66,7 @@ public class MasterActivity extends Utilities {
                     selectedFragment = new QuickAccessFragment();
                 } else if (itemId == R.id.nav_practice) {
                     selectedFragment = TopicsFragment.newInstance("Practice Topics");
-                } else if (itemId == R.id.nav_simulations) {
+                } else if (itemId == R.id.nav_simulation) {
                     selectedFragment = new SimulationStartFragment();
                 } else if (itemId == R.id.nav_recordings) {
                     selectedFragment = TopicsFragment.newInstance("Past Recordings");

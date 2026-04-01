@@ -9,9 +9,9 @@
         android:icon="@drawable/ic_practice_selector"
         android:title="Practice" />
     <item
-        android:id="@+id/nav_simulations"
+        android:id="@+id/nav_simulation"
         android:icon="@drawable/ic_simulation_selector"
-        android:title="Simulations" />
+        android:title="Simulation" />
     <item
         android:id="@+id/nav_recordings"
         android:icon="@drawable/ic_recording_selector"

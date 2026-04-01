@@ -208,7 +208,7 @@ public class QuickAccessFragment extends Fragment {
 
                     if (getActivity() instanceof MasterActivity) {
                         BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
-                        nav.setSelectedItemId(R.id.nav_simulations);
+                        nav.setSelectedItemId(R.id.nav_simulation);
                     }
                 }
             });

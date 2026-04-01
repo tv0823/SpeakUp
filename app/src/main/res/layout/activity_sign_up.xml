@@ -163,62 +163,11 @@
                 android:text="Sign Up"
                 android:textStyle="bold" />
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="2" />
-
-            <TextView
-                android:id="@+id/textView3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center|center_horizontal|center_vertical"
-                android:text="Or sign up with" />
 
             <Space
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="2" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="5"
-                android:orientation="horizontal">
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="15" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="70"
-                    android:backgroundTint="#f0f3f4"
-                    android:paddingStart="30dp"
-                    android:text="Continue with Google"
-
-                    android:textColor="#000000"
-                    android:textStyle="bold"
-                    app:icon="@drawable/google_logo"
-
-                    app:iconGravity="textStart"
-
-                    app:iconPadding="16dp"
-                    app:iconTint="@null" />
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="15" />
-
-            </LinearLayout>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="10" />
+                android:layout_weight="19" />
 
         </LinearLayout>
 
