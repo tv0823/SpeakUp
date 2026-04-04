@@ -26,7 +26,6 @@ import android.widget.Toast;
 
 import com.example.speakup.Activities.MasterActivity;
 import com.example.speakup.Activities.RemindersActivity;
-import com.example.speakup.Objects.ChartPoint;
 import com.example.speakup.Objects.Recording;
 import com.example.speakup.Objects.Simulation;
 import com.example.speakup.R;
@@ -46,9 +45,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -299,13 +299,12 @@ public class QuickAccessFragment extends Fragment {
 
         String selectedNormalized = (selected == null) ? "" : selected.trim().toLowerCase();
         if (selectedNormalized.equals("over all") || selectedNormalized.equals("overall")) {
-            // Over All now only checks recordings, as they already include simulation recordings.
-            fetchAndRenderChartRecordingsOnly(null, "over all");
+            fetchAndRenderChartCumulativeProgress(null, "Over All Progress");
             return;
         }
 
         if (selected != null && selected.equalsIgnoreCase(CATEGORY_SIMULATIONS)) {
-            fetchAndRenderChartSimulationsOnly();
+            fetchAndRenderChartSimulationsProgress();
             return;
         }
 
@@ -313,15 +312,15 @@ public class QuickAccessFragment extends Fragment {
         final String label;
         if (selected != null && selected.equalsIgnoreCase(CATEGORY_PERSONAL)) {
             categoryPath = CATEGORY_PERSONAL;
-            label = "personal";
+            label = "Personal Progress";
         } else if (selected != null && selected.equalsIgnoreCase(CATEGORY_VIDEO)) {
             categoryPath = CATEGORY_VIDEO;
-            label = "video clips";
+            label = "Video Clips Progress";
         } else if (selected != null && selected.equalsIgnoreCase(CATEGORY_PROJECT)) {
             categoryPath = CATEGORY_PROJECT;
-            label = "project";
+            label = "Project Progress";
         } else {
-            fetchAndRenderChartRecordingsOnly(null, "over all");
+            fetchAndRenderChartCumulativeProgress(null, "Over All Progress");
             return;
         }
 
@@ -338,25 +337,22 @@ public class QuickAccessFragment extends Fragment {
                         if (qId != null) allowedQuestionIds.add(qId);
                     }
                 }
-                fetchAndRenderChartRecordingsOnly(allowedQuestionIds, label);
+                fetchAndRenderChartCumulativeProgress(allowedQuestionIds, label);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 if (!isAdded()) return;
                 Toast.makeText(getContext(), "Failed to load chart category", Toast.LENGTH_SHORT).show();
-                fetchAndRenderChartRecordingsOnly(null, "over all");
+                fetchAndRenderChartCumulativeProgress(null, "Over All Progress");
             }
         });
     }
 
     /**
-     * Fetches and renders chart data for recording scores, optionally filtered by question IDs.
-     *
-     * @param allowedQuestionIds Set of question IDs to include, or null for all recordings.
-     * @param label              Label for the data set.
+     * Fetches all recordings (optionally filtered), sorts by date, and renders the cumulative average.
      */
-    private void fetchAndRenderChartRecordingsOnly(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
+    private void fetchAndRenderChartCumulativeProgress(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
         if (userRecordingsRef == null) return;
 
         userRecordingsRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -364,131 +360,163 @@ public class QuickAccessFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot userSnapshot) {
                 if (!isAdded() || lineChart == null) return;
 
-                ArrayList<ChartPoint> pointsData = new ArrayList<>();
+                ArrayList<Recording> recordings = new ArrayList<>();
                 for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
                     String questionId = questionSnapshot.getKey();
                     if (allowedQuestionIds != null && (questionId == null || !allowedQuestionIds.contains(questionId))) {
                         continue;
                     }
-                    for (DataSnapshot recordingSnapshot : questionSnapshot.getChildren()) {
-                        Recording recording = recordingSnapshot.getValue(Recording.class);
-                        if (recording != null && recording.getDateRecorded() != null) {
-                            pointsData.add(new ChartPoint(recording.getDateRecorded(), (float) recording.getScore()));
+                    for (DataSnapshot recSnapshot : questionSnapshot.getChildren()) {
+                        Recording rec = recSnapshot.getValue(Recording.class);
+                        if (rec != null && rec.getDateRecorded() != null) {
+                            recordings.add(rec);
                         }
                     }
                 }
 
-                renderChartPoints(pointsData, label);
+                sortRecordingsByDate(recordings);
+
+                ArrayList<Float> cumulativeAverages = new ArrayList<>();
+                float sum = 0;
+                for (int i = 0; i < recordings.size(); i++) {
+                    sum += recordings.get(i).getScore();
+                    cumulativeAverages.add(sum / (i + 1));
+                }
+
+                renderChartProgress(cumulativeAverages, label, false);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 if (!isAdded()) return;
-                Toast.makeText(getContext(), "Failed to load chart data", Toast.LENGTH_SHORT).show();
                 dismissChartLoading();
             }
         });
     }
 
     /**
-     * Fetches and renders chart data for overall simulation scores.
+     * Fetches all simulation scores, sorts by date, and renders them as dots on a line.
      */
-    private void fetchAndRenderChartSimulationsOnly() {
+    private void fetchAndRenderChartSimulationsProgress() {
         refSimulations.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded() || lineChart == null) return;
 
-                ArrayList<ChartPoint> pointsData = new ArrayList<>();
+                ArrayList<Simulation> sims = new ArrayList<>();
                 for (DataSnapshot simSnapshot : snapshot.getChildren()) {
                     Simulation sim = simSnapshot.getValue(Simulation.class);
                     if (sim != null && currentUserId.equals(sim.getUserId()) && sim.getDateCompleted() != null) {
-                        pointsData.add(new ChartPoint(sim.getDateCompleted(), (float) sim.getOverAllScore()));
+                        sims.add(sim);
                     }
                 }
 
-                renderChartPoints(pointsData, "simulations");
+                sortSimulationsByDate(sims);
+
+                ArrayList<Float> scores = new ArrayList<>();
+                for (Simulation sim : sims) {
+                    scores.add((float) sim.getOverAllScore());
+                }
+
+                renderChartProgress(scores, "Simulations Progress", true);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 if (!isAdded()) return;
-                Toast.makeText(getContext(), "Failed to load simulations", Toast.LENGTH_SHORT).show();
                 dismissChartLoading();
             }
         });
     }
 
     /**
-     * Sorts and displays the provided data points on the line chart.
-     *
-     * @param pointsData List of data points to render.
-     * @param label      Label for the chart data set.
+     * Renders a list of scores as a line progress.
      */
-    private void renderChartPoints(ArrayList<ChartPoint> pointsData, String label) {
+    private void renderChartProgress(ArrayList<Float> points, String label, boolean showDotsOnly) {
         if (!isAdded() || lineChart == null) return;
 
-        Collections.sort(pointsData, new Comparator<ChartPoint>() {
-            @Override
-            public int compare(ChartPoint o1, ChartPoint o2) {
-                return o1.getDate().compareTo(o2.getDate());
-            }
-        });
-
         ArrayList<Entry> entries = new ArrayList<>();
-        if (pointsData.isEmpty()) {
-            // Static preview data (for design) until Firebase has data
-            entries.add(new Entry(0, 55f));
-            entries.add(new Entry(1, 62f));
-            entries.add(new Entry(2, 58f));
-            entries.add(new Entry(3, 70f));
-            entries.add(new Entry(4, 66f));
-            entries.add(new Entry(5, 78f));
-            entries.add(new Entry(6, 73f));
-            entries.add(new Entry(7, 82f));
-            entries.add(new Entry(8, 76f));
-            entries.add(new Entry(9, 88f));
+        if (points.isEmpty()) {
+            // Static preview data
+            for (int i = 0; i < 5; i++) entries.add(new Entry(i, 50f + i * 5));
         } else {
-            // Keep the last 30 points
-            int start = Math.max(0, pointsData.size() - 30);
-            for (int i = start; i < pointsData.size(); i++) {
-                entries.add(new Entry(i - start, pointsData.get(i).getScore()));
+            for (int i = 0; i < points.size(); i++) {
+                entries.add(new Entry(i, points.get(i)));
             }
         }
 
         if (tvAvgGrade != null) {
-            if (pointsData.isEmpty()) {
+            if (points.isEmpty()) {
                 tvAvgGrade.setText("--%");
             } else {
-                float sum = 0f;
-                for (ChartPoint p : pointsData) sum += p.getScore();
-                int avg = Math.round(sum / pointsData.size());
-                tvAvgGrade.setText(avg + "%");
+                tvAvgGrade.setText(Math.round(points.get(points.size() - 1)) + "%");
             }
         }
+        
+        TextView rangeLabel = getView() != null ? getView().findViewById(R.id.tvChartRangeLabel) : null;
+        if (rangeLabel != null) rangeLabel.setText(showDotsOnly ? "Simulation Progress" : "Cumulative Average");
+
+        lineChart.getXAxis().setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return (showDotsOnly) ? "" : String.valueOf((int) value + 1);
+            }
+        });
+        lineChart.getXAxis().setLabelCount(Math.min(points.size(), 6), false);
 
         LineDataSet dataSet = new LineDataSet(entries, label);
         dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        dataSet.setCubicIntensity(0.2f);
-        dataSet.setColor(Color.parseColor("#3B82F6")); // blue-500
-        dataSet.setLineWidth(2.75f);
+        dataSet.setColor(Color.parseColor("#3B82F6"));
+        dataSet.setLineWidth(2.5f);
         dataSet.setDrawCircles(true);
-        dataSet.setCircleColor(Color.parseColor("#1D4ED8")); // blue-700
-        dataSet.setCircleRadius(4f);
+        dataSet.setCircleColor(Color.parseColor("#1D4ED8"));
+        dataSet.setCircleRadius(showDotsOnly ? 5f : 3f);
         dataSet.setDrawCircleHole(true);
         dataSet.setCircleHoleRadius(2f);
         dataSet.setCircleHoleColor(Color.WHITE);
         dataSet.setDrawValues(false);
         dataSet.setDrawFilled(true);
-        dataSet.setFillColor(Color.parseColor("#93C5FD")); // blue-300
-        dataSet.setFillAlpha(70);
-        dataSet.setHighLightColor(Color.parseColor("#94A3B8")); // slate-400
-        dataSet.setDrawHorizontalHighlightIndicator(false);
+        dataSet.setFillColor(Color.parseColor("#93C5FD"));
+        dataSet.setFillAlpha(60);
 
         lineChart.setData(new LineData(dataSet));
         lineChart.invalidate();
-
         dismissChartLoading();
+    }
+    /**
+     * Manually sorts a list of recordings by date using bubble sort.
+     *
+     * @param recordings The list to sort.
+     */
+    private void sortRecordingsByDate(ArrayList<Recording> recordings) {
+        int n = recordings.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (recordings.get(j).getDateRecorded().after(recordings.get(j + 1).getDateRecorded())) {
+                    Recording temp = recordings.get(j);
+                    recordings.set(j, recordings.get(j + 1));
+                    recordings.set(j + 1, temp);
+                }
+            }
+        }
+    }
+
+    /**
+     * Manually sorts a list of simulations by date using bubble sort.
+     *
+     * @param sims The list to sort.
+     */
+    private void sortSimulationsByDate(ArrayList<Simulation> sims) {
+        int n = sims.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (sims.get(j).getDateCompleted().after(sims.get(j + 1).getDateCompleted())) {
+                    Simulation temp = sims.get(j);
+                    sims.set(j, sims.get(j + 1));
+                    sims.set(j + 1, temp);
+                }
+            }
+        }
     }
 
     /**
@@ -549,8 +577,7 @@ public class QuickAccessFragment extends Fragment {
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                // Show 1..30 instead of 0..29
-                return String.valueOf(((int) value) + 1);
+                return String.valueOf((int) value);
             }
         });
 
