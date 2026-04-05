@@ -679,8 +679,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     }
                 })
                 .setNegativeButton("Cancel", null)
-                .setOnDismissListener(dialogInterface -> {
-                    isFinishDialogOpen = false;
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        isFinishDialogOpen = false;
+                    }
                 })
                 .show();
     }

@@ -5,6 +5,7 @@ import static com.example.speakup.Utils.FBRef.refQuestions;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +27,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.speakup.Activities.PracticeQuestionActivity;
 import com.example.speakup.Objects.Question;
 import com.example.speakup.R;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -280,10 +283,13 @@ public class QuestionsGeneralFragment extends Fragment {
 
         loadTopicImage(imageView, question.getSubTopic().split(" Set")[0].replace(' ', '_').toLowerCase());
 
-        cardView.setOnClickListener(v -> {
-            Intent si = new Intent(getContext(), PracticeQuestionActivity.class);
-            si.putExtra("question", question);
-            startActivity(si);
+        cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent si = new Intent(getContext(), PracticeQuestionActivity.class);
+                si.putExtra("question", question);
+                startActivity(si);
+            }
         });
 
         container.addView(cardView);
@@ -300,17 +306,23 @@ public class QuestionsGeneralFragment extends Fragment {
         String fileName = questionId + ".jpg";
         StorageReference refFile = refQuestionMedia.child(fileName);
 
-        refFile.getDownloadUrl().addOnSuccessListener(uri -> {
-            if (getContext() != null && isAdded()) {
-                Glide.with(this)
-                        .load(uri)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .error(R.drawable.error_image)
-                        .centerCrop()
-                        .into(imageView);
+        refFile.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                if (getContext() != null && isAdded()) {
+                    Glide.with(QuestionsGeneralFragment.this)
+                            .load(uri)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .error(R.drawable.error_image)
+                            .centerCrop()
+                            .into(imageView);
+                }
             }
-        }).addOnFailureListener(e -> {
-            imageView.setImageResource(R.drawable.error_image);
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                imageView.setImageResource(R.drawable.error_image);
+            }
         });
     }
 }

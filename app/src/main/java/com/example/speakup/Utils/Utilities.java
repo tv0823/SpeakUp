@@ -92,21 +92,24 @@ public class Utilities extends AppCompatActivity {
 
         if (root == null) return; // Safety check
 
-        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+        ViewCompat.setOnApplyWindowInsetsListener(root, new androidx.core.view.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-            if (this instanceof MasterActivity) {
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                if (Utilities.this instanceof MasterActivity) {
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
 
-                BottomNavigationView navBar = findViewById(R.id.bottom_navigation);
-                if (navBar != null) {
-                    navBar.setPadding(0, 0, 0, systemBars.bottom);
+                    BottomNavigationView navBar = findViewById(R.id.bottom_navigation);
+                    if (navBar != null) {
+                        navBar.setPadding(0, 0, 0, systemBars.bottom);
+                    }
+                } else {
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
                 }
-            } else {
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            }
 
-            return insets;
+                return insets;
+            }
         });
     }
 

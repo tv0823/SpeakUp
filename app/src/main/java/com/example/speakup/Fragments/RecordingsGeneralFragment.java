@@ -48,15 +48,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A fragment that displays a sortable grid of recordings for a specific category.
+ * A fragment that displays a sortable grid of recordings for a specific
+ * category.
  * <p>
- * This fragment fetches recording data from Firebase Realtime Database, filters them by category,
+ * This fragment fetches recording data from Firebase Realtime Database, filters
+ * them by category,
  * and displays them in a two-column staggered layout. It supports:
  * <ul>
- *     <li>Sorting by Grade (Score) or Date Recorded.</li>
- *     <li>Toggling sort direction (Ascending vs. Descending).</li>
- *     <li>Navigating to the {@link ResultsActivity} or {@link SimulationResultsActivity} on click.</li>
- *     <li>Renaming recordings via long-press.</li>
+ * <li>Sorting by Grade (Score) or Date Recorded.</li>
+ * <li>Toggling sort direction (Ascending vs. Descending).</li>
+ * <li>Navigating to the {@link ResultsActivity} or
+ * {@link SimulationResultsActivity} on click.</li>
+ * <li>Renaming recordings via long-press.</li>
  * </ul>
  * </p>
  */
@@ -83,7 +86,23 @@ public class RecordingsGeneralFragment extends Fragment {
     private ImageButton btnSortDirection;
 
     /**
-     * List of all recordings fetched from Firebase that belong to the current category.
+     * Card view shown when no recordings are found.
+     */
+    private View cardNoData;
+
+    /**
+     * Text view within the cardNoData to display the message.
+     */
+    private TextView tvNoDataMessage;
+
+    /**
+     * Container for the grid columns.
+     */
+    private LinearLayout mainColumnsContainer;
+
+    /**
+     * List of all recordings fetched from Firebase that belong to the current
+     * category.
      */
     private ArrayList<Recording> allRecordingsList;
 
@@ -98,12 +117,14 @@ public class RecordingsGeneralFragment extends Fragment {
     private String currentUserId;
 
     /**
-     * The category identifier used to filter recordings (e.g., "Personal Questions" or "Simulation").
+     * The category identifier used to filter recordings (e.g., "Personal Questions"
+     * or "Simulation").
      */
     private String categoryPath;
 
     /**
-     * Flag to track if the current sort direction is Ascending (true) or Descending (false).
+     * Flag to track if the current sort direction is Ascending (true) or Descending
+     * (false).
      * Defaults to Descending (Newest first / Highest score first).
      */
     private boolean isAscending = false;
@@ -128,7 +149,8 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Creates a new instance of this fragment with a specific category filter.
      *
-     * @param category The category path used to filter recordings (e.g., "Personal Questions").
+     * @param category The category path used to filter recordings (e.g., "Personal
+     *                 Questions").
      * @return A new instance of RecordingsGeneralFragment.
      */
     public static RecordingsGeneralFragment newInstance(String category) {
@@ -142,7 +164,8 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Initializes the fragment and retrieves the category argument.
      *
-     * @param savedInstanceState If the fragment is being re-created from a previous saved state.
+     * @param savedInstanceState If the fragment is being re-created from a previous
+     *                           saved state.
      */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -155,9 +178,12 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Inflates the layout and initializes UI components and logic listeners.
      *
-     * @param inflater           The LayoutInflater object that can be used to inflate views.
-     * @param container          The parent view that the fragment's UI should be attached to.
-     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @param inflater           The LayoutInflater object that can be used to
+     *                           inflate views.
+     * @param container          The parent view that the fragment's UI should be
+     *                           attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     *                           from a previous saved state.
      * @return The View for the fragment's UI.
      */
     @Override
@@ -168,6 +194,9 @@ public class RecordingsGeneralFragment extends Fragment {
         columnRight = view.findViewById(R.id.columnRight);
         toggleGroup = view.findViewById(R.id.toggleGroup);
         btnSortDirection = view.findViewById(R.id.btnSortDirection);
+        cardNoData = view.findViewById(R.id.cardNoData);
+        tvNoDataMessage = view.findViewById(R.id.tvNoDataMessage);
+        mainColumnsContainer = view.findViewById(R.id.mainColumnsContainer);
 
         pD = new ProgressDialog(getContext());
         if ("Simulation".equals(categoryPath)) {
@@ -198,32 +227,38 @@ public class RecordingsGeneralFragment extends Fragment {
     }
 
     /**
-     * Configures behavior after the view has been created, specifically the back button logic.
+     * Configures behavior after the view has been created, specifically the back
+     * button logic.
      *
      * @param view               The View returned by {@link #onCreateView}.
-     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     *                           from a previous saved state.
      */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         // if the user press back button, go to home
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
-                nav.setSelectedItemId(R.id.nav_home);
-            }
-        });
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(),
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        BottomNavigationView nav = getActivity().findViewById(R.id.bottom_navigation);
+                        nav.setSelectedItemId(R.id.nav_home);
+                    }
+                });
     }
 
     /**
      * Sets up the listener for the sort criteria toggle group (Date vs. Grade).
      */
     private void setupToggleLogic() {
-        toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                applySortAndDisplay(checkedId == R.id.btnGrade);
+        toggleGroup.addOnButtonCheckedListener(new MaterialButtonToggleGroup.OnButtonCheckedListener() {
+            @Override
+            public void onButtonChecked(MaterialButtonToggleGroup group, int checkedId, boolean isChecked) {
+                if (isChecked) {
+                    applySortAndDisplay(checkedId == R.id.btnGrade);
+                }
             }
         });
     }
@@ -254,27 +289,38 @@ public class RecordingsGeneralFragment extends Fragment {
     }
 
     /**
-     * <p>This method performs a two-step data retrieval process:</p>
+     * <p>
+     * This method performs a two-step data retrieval process:
+     * </p>
      * <ol>
-     *     <li>
-     *         Retrieves all questions under the current {@link #categoryPath} and builds a set of
-     *         allowed question IDs. During this step, it also prepares a mapping between
-     *         question IDs and their corresponding image keys for later use.
-     *     </li>
-     *     <li>
-     *         Fetches all recordings for the current user and filters them by checking whether
-     *         their question ID exists in the allowed set.
-     *     </li>
+     * <li>
+     * Retrieves all questions under the current {@link #categoryPath} and builds a
+     * set of
+     * allowed question IDs. During this step, it also prepares a mapping between
+     * question IDs and their corresponding image keys for later use.
+     * </li>
+     * <li>
+     * Fetches all recordings for the current user and filters them by checking
+     * whether
+     * their question ID exists in the allowed set.
+     * </li>
      * </ol>
      *
-     * <p>All matching recordings are stored in {@link #allRecordingsList}, after which the UI
-     * is updated by applying sorting and displaying the results.</p>
+     * <p>
+     * All matching recordings are stored in {@link #allRecordingsList}, after which
+     * the UI
+     * is updated by applying sorting and displaying the results.
+     * </p>
      *
-     * <p>If no recordings are found for the selected category, a toast message is shown.</p>
+     * <p>
+     * If no recordings are found for the selected category, a toast message is
+     * shown.
+     * </p>
      */
     private void fetchRecordingsFromFirebase() {
         if (categoryPath == null || currentUserId == null) {
-            if (pD != null) pD.dismiss();
+            if (pD != null)
+                pD.dismiss();
             return;
         }
 
@@ -295,7 +341,8 @@ public class RecordingsGeneralFragment extends Fragment {
                             Question q = qSnap.getValue(Question.class);
                             if (q != null) {
                                 String sub = q.getSubTopic();
-                                if (sub == null || sub.equals("null")) sub = q.getTopic();
+                                if (sub == null || sub.equals("null"))
+                                    sub = q.getTopic();
 
                                 if (sub != null) {
                                     String key = sub.split(" Set")[0]
@@ -312,56 +359,67 @@ public class RecordingsGeneralFragment extends Fragment {
                 refRecordings.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot userSnapshot) {
-                        if (pD != null) pD.dismiss();
+                        if (pD != null)
+                            pD.dismiss();
 
                         allRecordingsList.clear();
 
                         for (DataSnapshot questionSnapshot : userSnapshot.getChildren()) {
                             String qId = questionSnapshot.getKey();
-                            if (!allowedIds.contains(qId)) continue;
+                            if (!allowedIds.contains(qId))
+                                continue;
 
                             for (DataSnapshot recSnap : questionSnapshot.getChildren()) {
                                 Recording rec = recSnap.getValue(Recording.class);
-                                if (rec != null) allRecordingsList.add(rec);
+                                if (rec != null)
+                                    allRecordingsList.add(rec);
                             }
                         }
 
                         if (allRecordingsList.isEmpty()) {
-                            Toast.makeText(getContext(), "No recordings found", Toast.LENGTH_SHORT).show();
+                            updateVisibility(false, "No recordings for this tab");
                             return;
                         }
+
+                        updateVisibility(true, null);
 
                         applySortAndDisplay(true);
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        if (pD != null) pD.dismiss();
+                        if (pD != null)
+                            pD.dismiss();
                     }
                 });
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (pD != null) pD.dismiss();
+                if (pD != null)
+                    pD.dismiss();
             }
         });
     }
 
     /**
-     * Sorts the recording list based on the chosen criteria and direction, then refreshes the UI.
+     * Sorts the recording list based on the chosen criteria and direction, then
+     * refreshes the UI.
      * <p>
-     * Uses a Selection Sort implementation to reorder {@link #allRecordingsList} or {@link #allSimulationsList}.
+     * Uses a Selection Sort implementation to reorder {@link #allRecordingsList} or
+     * {@link #allSimulationsList}.
      * </p>
      *
-     * @param sortByGrade If true, sorts by score. If false, sorts by recording date.
+     * @param sortByGrade If true, sorts by score. If false, sorts by recording
+     *                    date.
      */
     private void applySortAndDisplay(boolean sortByGrade) {
         if ("Simulation".equals(categoryPath)) {
             applySortAndDisplaySimulation(sortByGrade);
             return;
         }
-        if (allRecordingsList == null || allRecordingsList.isEmpty()) return;
+        if (allRecordingsList == null || allRecordingsList.isEmpty())
+            return;
         int n = allRecordingsList.size();
 
         // Selection Sort Implementation
@@ -405,12 +463,15 @@ public class RecordingsGeneralFragment extends Fragment {
     }
 
     /**
-     * Sorts the simulation list based on the chosen criteria and direction, then refreshes the UI.
+     * Sorts the simulation list based on the chosen criteria and direction, then
+     * refreshes the UI.
      *
-     * @param sortByGrade If true, sorts by score. If false, sorts by completion date.
+     * @param sortByGrade If true, sorts by score. If false, sorts by completion
+     *                    date.
      */
     private void applySortAndDisplaySimulation(boolean sortByGrade) {
-        if (allSimulationsList == null || allSimulationsList.isEmpty()) return;
+        if (allSimulationsList == null || allSimulationsList.isEmpty())
+            return;
         int n = allSimulationsList.size();
 
         for (int i = 0; i < n - 1; i++) {
@@ -454,7 +515,8 @@ public class RecordingsGeneralFragment extends Fragment {
      * Clears and repopulates the two-column grid with recording cards.
      */
     private void displayRecordings() {
-        if (columnLeft == null || columnRight == null) return;
+        if (columnLeft == null || columnRight == null)
+            return;
         columnLeft.removeAllViews();
         columnRight.removeAllViews();
 
@@ -468,7 +530,8 @@ public class RecordingsGeneralFragment extends Fragment {
      * Clears and repopulates the two-column grid with simulation cards.
      */
     private void displaySimulations() {
-        if (columnLeft == null || columnRight == null) return;
+        if (columnLeft == null || columnRight == null)
+            return;
         columnLeft.removeAllViews();
         columnRight.removeAllViews();
 
@@ -494,15 +557,21 @@ public class RecordingsGeneralFragment extends Fragment {
         // Fallback to questionId if we couldn't determine image key.
         loadTopicImage(imageView, (imageKey != null) ? imageKey : recording.getQuestionId());
 
-        cardView.setOnClickListener(view -> {
-            Intent si = new Intent(getContext(), ResultsActivity.class);
-            si.putExtra("recording", recording);
-            startActivity(si);
+        cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent si = new Intent(getContext(), ResultsActivity.class);
+                si.putExtra("recording", recording);
+                startActivity(si);
+            }
         });
 
-        cardView.setOnLongClickListener(v -> {
-            showRenameDialog(recording);
-            return true; // Returns true to indicate the click was handled
+        cardView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                showRenameDialog(recording);
+                return true; // Returns true to indicate the click was handled
+            }
         });
 
         container.addView(cardView);
@@ -527,7 +596,12 @@ public class RecordingsGeneralFragment extends Fragment {
         titleText.setText("Simulation\nScore: " + simulation.getOverAllScore() + "\n" + dateText);
         loadSimulationCardImage(imageView);
 
-        cardView.setOnClickListener(view -> openSimulationResult(simulation));
+        cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openSimulationResult(simulation);
+            }
+        });
         container.addView(cardView);
     }
 
@@ -536,14 +610,16 @@ public class RecordingsGeneralFragment extends Fragment {
      */
     private void fetchSimulationsFromFirebase() {
         if (currentUserId == null) {
-            if (pD != null) pD.dismiss();
+            if (pD != null)
+                pD.dismiss();
             return;
         }
 
         refSimulations.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (pD != null && pD.isShowing()) pD.dismiss();
+                if (pD != null && pD.isShowing())
+                    pD.dismiss();
                 allSimulationsList.clear();
 
                 for (DataSnapshot simSnapshot : snapshot.getChildren()) {
@@ -554,27 +630,32 @@ public class RecordingsGeneralFragment extends Fragment {
                 }
 
                 if (allSimulationsList.isEmpty()) {
-                    Toast.makeText(getContext(), "No simulations found", Toast.LENGTH_SHORT).show();
+                    updateVisibility(false, "No simulations for this tab");
                     return;
                 }
+
+                updateVisibility(true, null);
 
                 applySortAndDisplay(toggleGroup.getCheckedButtonId() == R.id.btnGrade);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (pD != null) pD.dismiss();
+                if (pD != null)
+                    pD.dismiss();
             }
         });
     }
 
     /**
-     * Resolves individual recordings for a simulation and opens the results activity.
+     * Resolves individual recordings for a simulation and opens the results
+     * activity.
      *
      * @param simulation The simulation object to view results for.
      */
     private void openSimulationResult(Simulation simulation) {
-        if (currentUserId == null) return;
+        if (currentUserId == null)
+            return;
         if (simulation.getRecordingsIds() == null || simulation.getRecordingsIds().isEmpty()) {
             Toast.makeText(getContext(), "No recordings for this simulation", Toast.LENGTH_SHORT).show();
             return;
@@ -588,7 +669,8 @@ public class RecordingsGeneralFragment extends Fragment {
         refRecordings.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot userRecordingsSnapshot) {
-                if (loadingDialog.isShowing()) loadingDialog.dismiss();
+                if (loadingDialog.isShowing())
+                    loadingDialog.dismiss();
 
                 ArrayList<Recording> resolvedRecordings = new ArrayList<>();
                 for (String recordingId : simulation.getRecordingsIds()) {
@@ -611,7 +693,8 @@ public class RecordingsGeneralFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (loadingDialog.isShowing()) loadingDialog.dismiss();
+                if (loadingDialog.isShowing())
+                    loadingDialog.dismiss();
                 Toast.makeText(getContext(), "Failed to load simulation details", Toast.LENGTH_SHORT).show();
             }
         });
@@ -620,16 +703,19 @@ public class RecordingsGeneralFragment extends Fragment {
     /**
      * Searches for a recording by ID within the user's recordings snapshot.
      *
-     * @param userRecordingsSnapshot The snapshot containing all of the user's recordings.
+     * @param userRecordingsSnapshot The snapshot containing all the user's
+     *                               recordings.
      * @param recordingId            The ID of the recording to find.
      * @return The resolved Recording object, or null if not found.
      */
     private Recording findRecordingById(DataSnapshot userRecordingsSnapshot, String recordingId) {
         for (DataSnapshot questionNode : userRecordingsSnapshot.getChildren()) {
             DataSnapshot recNode = questionNode.child(recordingId);
-            if (!recNode.exists()) continue;
+            if (!recNode.exists())
+                continue;
             Recording rec = recNode.getValue(Recording.class);
-            if (rec != null) return rec;
+            if (rec != null)
+                return rec;
         }
         return null;
     }
@@ -640,7 +726,8 @@ public class RecordingsGeneralFragment extends Fragment {
      * @param recording The recording object to be renamed.
      */
     private void showRenameDialog(Recording recording) {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(
+                getContext());
         builder.setTitle("Rename your recording");
 
         final android.widget.EditText eT = new android.widget.EditText(getContext());
@@ -649,32 +736,41 @@ public class RecordingsGeneralFragment extends Fragment {
         eT.setSelection(eT.getText().length()); // Move cursor to end
         builder.setView(eT);
 
-        builder.setPositiveButton("Rename", (dialog, which) -> {
-            String newName = eT.getText().toString().trim();
+        builder.setPositiveButton("Rename", new android.content.DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(android.content.DialogInterface dialog, int which) {
+                String newName = eT.getText().toString().trim();
 
-            // CHECK 1: Is it empty?
-            if (newName.isEmpty()) {
-                Toast.makeText(getContext(), "Name cannot be empty", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                // CHECK 1: Is it empty?
+                if (newName.isEmpty()) {
+                    Toast.makeText(getContext(), "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-            // CHECK 2: Is it actually different?
-            if (newName.equals(oldName)) {
-                // No change detected, just close the dialog
-                dialog.dismiss();
-            } else {
-                // Change detected, proceed to Firebase
-                updateRecordingNameInFirebase(recording, newName);
+                // CHECK 2: Is it actually different?
+                if (newName.equals(oldName)) {
+                    // No change detected, just close the dialog
+                    dialog.dismiss();
+                } else {
+                    // Change detected, proceed to Firebase
+                    updateRecordingNameInFirebase(recording, newName);
+                }
             }
         });
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+        builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(android.content.DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
 
         builder.show();
     }
 
     /**
-     * Updates the recording's title in Firebase and refreshes the local UI upon success.
+     * Updates the recording's title in Firebase and refreshes the local UI upon
+     * success.
      *
      * @param recording The recording object whose title is being updated.
      * @param newName   The new title for the recording.
@@ -686,20 +782,27 @@ public class RecordingsGeneralFragment extends Fragment {
                 .child(recording.getRecordingId())
                 .child("displayTitle")
                 .setValue(newName)
-                .addOnSuccessListener(aVoid -> {
-                    if (isAdded()) {
-                        // 1. Update the local object now that we know Firebase is updated
-                        recording.setDisplayTitle(newName);
+                .addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        if (isAdded()) {
+                            // 1. Update the local object now that we know Firebase is updated
+                            recording.setDisplayTitle(newName);
 
-                        // 2. Refresh the UI columns to show the new name
-                        displayRecordings();
+                            // 2. Refresh the UI columns to show the new name
+                            displayRecordings();
 
-                        Toast.makeText(getContext(), "Renamed successfully!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Renamed successfully!", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 })
-                .addOnFailureListener(e -> {
-                    if (isAdded()) {
-                        Toast.makeText(getContext(), "Failed to update name: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                .addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        if (isAdded()) {
+                            Toast.makeText(getContext(), "Failed to update name: " + e.getMessage(), Toast.LENGTH_SHORT)
+                                    .show();
+                        }
                     }
                 });
     }
@@ -714,16 +817,24 @@ public class RecordingsGeneralFragment extends Fragment {
         String fileName = questionId + ".jpg";
         StorageReference refFile = refQuestionMedia.child(fileName);
 
-        refFile.getDownloadUrl().addOnSuccessListener(uri -> {
-            if (getContext() != null && isAdded()) {
-                Glide.with(this)
-                        .load(uri)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .error(R.drawable.error_image)
-                        .centerCrop()
-                        .into(imageView);
+        refFile.getDownloadUrl().addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<android.net.Uri>() {
+            @Override
+            public void onSuccess(android.net.Uri uri) {
+                if (getContext() != null && isAdded()) {
+                    Glide.with(RecordingsGeneralFragment.this)
+                            .load(uri)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .error(R.drawable.error_image)
+                            .centerCrop()
+                            .into(imageView);
+                }
             }
-        }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.error_image));
+        }).addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                imageView.setImageResource(R.drawable.error_image);
+            }
+        });
     }
 
     /**
@@ -733,15 +844,52 @@ public class RecordingsGeneralFragment extends Fragment {
      */
     private void loadSimulationCardImage(ImageView imageView) {
         StorageReference refFile = refQuestionMedia.child("simulation.jpg");
-        refFile.getDownloadUrl().addOnSuccessListener(uri -> {
-            if (getContext() != null && isAdded()) {
-                Glide.with(this)
-                        .load(uri)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .error(R.drawable.placeholder)
-                        .centerCrop()
-                        .into(imageView);
+        refFile.getDownloadUrl().addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<android.net.Uri>() {
+            @Override
+            public void onSuccess(android.net.Uri uri) {
+                if (getContext() != null && isAdded()) {
+                    Glide.with(RecordingsGeneralFragment.this)
+                            .load(uri)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .error(R.drawable.placeholder)
+                            .centerCrop()
+                            .into(imageView);
+                }
             }
-        }).addOnFailureListener(e -> imageView.setImageResource(R.drawable.placeholder));
+        }).addOnFailureListener(new com.google.android.gms.tasks.OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                imageView.setImageResource(R.drawable.placeholder);
+            }
+        });
+    }
+
+    /**
+     * Updates the visibility of the UI components based on whether data is available.
+     *
+     * @param hasData If true, shows the data grid. If false, shows the "No Data" card.
+     * @param message The message to display in the "No Data" card.
+     */
+    private void updateVisibility(boolean hasData, String message) {
+        if (!isAdded()) return;
+        
+        if (mainColumnsContainer == null) return;
+
+        if (hasData) {
+            if (cardNoData != null) cardNoData.setVisibility(View.GONE);
+            mainColumnsContainer.setVisibility(View.VISIBLE);
+            if (toggleGroup != null) toggleGroup.setVisibility(View.VISIBLE);
+            if (btnSortDirection != null) btnSortDirection.setVisibility(View.VISIBLE);
+        } else {
+            if (cardNoData != null) {
+                cardNoData.setVisibility(View.VISIBLE);
+                if (tvNoDataMessage != null && message != null) {
+                    tvNoDataMessage.setText(message);
+                }
+            }
+            mainColumnsContainer.setVisibility(View.GONE);
+            if (toggleGroup != null) toggleGroup.setVisibility(View.GONE);
+            if (btnSortDirection != null) btnSortDirection.setVisibility(View.GONE);
+        }
     }
 }

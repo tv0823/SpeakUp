@@ -305,18 +305,24 @@ public class ProfileFragment extends Fragment {
     private void setProfilePicture(ShapeableImageView profilePicture) {
         StorageReference refFile = refST.child("User_Profiles/" + uid + ".jpg");
 
-        refFile.getDownloadUrl().addOnSuccessListener(uri -> {
-            if (getContext() != null && isAdded()) {
-                Glide.with(this)
-                        .load(uri)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .error(R.drawable.error_image)
-                        .centerCrop()
-                        .into(profilePicture);
+        refFile.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                if (getContext() != null && isAdded()) {
+                    Glide.with(ProfileFragment.this)
+                            .load(uri)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .error(R.drawable.error_image)
+                            .centerCrop()
+                            .into(profilePicture);
+                }
             }
-        }).addOnFailureListener(e -> {
-            profilePicture.setImageResource(R.drawable.placeholder);
-            Toast.makeText(getActivity(), "Profile image failed to load", Toast.LENGTH_LONG).show();
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                profilePicture.setImageResource(R.drawable.placeholder);
+                Toast.makeText(getActivity(), "Profile image failed to load", Toast.LENGTH_LONG).show();
+            }
         });
     }
 

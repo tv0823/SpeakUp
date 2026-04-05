@@ -52,9 +52,12 @@ public class SimulationStartFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         Button btnStartSim = view.findViewById(R.id.btnStartSim);
-        btnStartSim.setOnClickListener(v -> {
-            Intent intent = new Intent(requireActivity(), SimulationsActivity.class);
-            startActivity(intent);
+        btnStartSim.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(requireActivity(), SimulationsActivity.class);
+                startActivity(intent);
+            }
         });
 
         // if the user press back button, go to home

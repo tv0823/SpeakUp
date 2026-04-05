@@ -79,8 +79,11 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
                     .setTitle("Connection Lost")
                     .setMessage("SpeakUp requires internet connection. Please reconnect.")
                     .setCancelable(false)
-                    .setPositiveButton("Settings", (dialog, which) -> {
-                        activity.startActivity(new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS));
+                    .setPositiveButton("Settings", new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface dialog, int which) {
+                            activity.startActivity(new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS));
+                        }
                     })
                     .create();
             networkDialog.show();
