@@ -72,9 +72,8 @@ public class TtsHelper {
     /**
      * Speaks the provided text starting from a position determined by the given percentage.
      * <p>
-     * This method stops any current playback before starting the new utterance. To ensure 
-     * a smooth experience, it attempts to find the nearest word boundary after the calculated 
-     * start index so that words are not cut in half.
+     * This method stops any current playback before starting the new utterance. It calculates
+     * the start position as a direct percentage of the total text length.
      * </p>
      *
      * @param fullText   The complete string of text to be processed.
@@ -95,15 +94,11 @@ public class TtsHelper {
         // 2. Otherwise, calculate where to jump
         int charIndex = (int) (fullText.length() * percentage);
 
-        // Find the next space so we don't start in the middle of a word
-        int nextSpace = fullText.indexOf(" ", charIndex);
-        String remainingText;
+        // Ensure charIndex is within bounds
+        if (charIndex >= fullText.length()) return;
+        if (charIndex < 0) charIndex = 0;
 
-        if (nextSpace != -1 && nextSpace < fullText.length()) {
-            remainingText = fullText.substring(nextSpace).trim();
-        } else {
-            remainingText = fullText.substring(Math.min(charIndex, fullText.length())).trim();
-        }
+        String remainingText = fullText.substring(charIndex).trim();
 
         if (!remainingText.isEmpty()) {
             tts.speak(remainingText, TextToSpeech.QUEUE_FLUSH, null, "speech_utterance");
