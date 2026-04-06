@@ -213,8 +213,8 @@ public class QuestionsGeneralFragment extends Fragment {
      * @param topics The list of unique topics to display in the spinner.
      */
     private void setupSpinner(ArrayList<String> topics) {
-        // Show the spinner ONLY if the category is PersonalQuestions
-        if ("Personal Questions".equals(categoryPath)) {
+        // Show the spinner ONLY if the category is PersonalQuestions or Video Clip Questions
+        if ("Personal Questions".equals(categoryPath) || "Video Clip Questions".equals(categoryPath)) {
             spinnerTopics.setVisibility(View.VISIBLE);
             spinnerTopics.setClickable(true);
         } else {

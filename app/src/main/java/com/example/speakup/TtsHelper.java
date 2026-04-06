@@ -28,6 +28,15 @@ public class TtsHelper {
     private boolean isInitialized = false;
 
     /**
+     * Callback for TTS initialization status.
+     */
+    public interface TtsInitListener {
+        void onInitStatus(boolean success);
+    }
+
+    private TtsInitListener initListener;
+
+    /**
      * Constructs a new TtsHelper and begins the asynchronous initialization of the TTS engine.
      * <p>
      * On successful initialization, the language is set to {@link Locale#US} and the speech rate
@@ -49,12 +58,36 @@ public class TtsHelper {
                         // Set a natural speaking rate
                         tts.setSpeechRate(0.7f);
                         isInitialized = true;
+                        if (initListener != null) initListener.onInitStatus(true);
                     }
                 } else {
                     Toast.makeText(context, "TTS initialization failed", Toast.LENGTH_SHORT).show();
+                    if (initListener != null) initListener.onInitStatus(false);
                 }
             }
         });
+    }
+
+    /**
+     * Sets a listener to be notified of the TTS engine initialization status.
+     *
+     * @param listener The {@link TtsInitListener} to receive the status update.
+     */
+    public void setTtsInitListener(TtsInitListener listener) {
+        this.initListener = listener;
+        // If it's already initialized, notify the listener immediately
+        if (isInitialized && initListener != null) {
+            initListener.onInitStatus(true);
+        }
+    }
+
+    /**
+     * Returns whether the TTS engine is currently initialized and ready for use.
+     *
+     * @return {@code true} if initialized, {@code false} otherwise.
+     */
+    public boolean isInitialized() {
+        return isInitialized;
     }
 
     /**
@@ -73,7 +106,7 @@ public class TtsHelper {
      * Speaks the provided text starting from a position determined by the given percentage.
      * <p>
      * This method stops any current playback before starting the new utterance. It calculates
-     * the start position as a direct percentage of the total text length.
+     * the start index as a direct percentage of the total text length.
      * </p>
      *
      * @param fullText   The complete string of text to be processed.
@@ -81,26 +114,30 @@ public class TtsHelper {
      *                   where playback should begin.
      */
     public void speakFromPercentage(String fullText, float percentage) {
+        int charIndex = (int) (fullText.length() * percentage);
+        speakFromIndex(fullText, charIndex);
+    }
+
+    /**
+     * Speaks the provided text starting from a specific character index.
+     * <p>
+     * This method stops any current playback before starting the new utterance.
+     * </p>
+     *
+     * @param fullText  The complete string of text.
+     * @param charIndex The index of the character to start speaking from.
+     */
+    public void speakFromIndex(String fullText, int charIndex) {
         if (!isInitialized || fullText == null || fullText.isEmpty()) return;
 
         tts.stop();
 
-        // 1. If we are at the very start (percentage is 0), speak the whole text
-        if (percentage <= 0.01f) {
-            tts.speak(fullText, TextToSpeech.QUEUE_FLUSH, null, "speech_utterance");
-            return;
-        }
-
-        // 2. Otherwise, calculate where to jump
-        int charIndex = (int) (fullText.length() * percentage);
-
-        // Ensure charIndex is within bounds
         if (charIndex >= fullText.length()) return;
         if (charIndex < 0) charIndex = 0;
 
-        String remainingText = fullText.substring(charIndex).trim();
+        String remainingText = fullText.substring(charIndex);
 
-        if (!remainingText.isEmpty()) {
+        if (!remainingText.trim().isEmpty()) {
             tts.speak(remainingText, TextToSpeech.QUEUE_FLUSH, null, "speech_utterance");
         }
     }

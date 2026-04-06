@@ -50,6 +50,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
@@ -97,17 +98,19 @@ public class PracticeQuestionActivity extends Utilities {
     private ImageButton playPauseBtn, recordBtn, playRecordingBtn, deleteRecordingBtn;
     private FrameLayout linesContainer;
     private YouTubePlayerView youTubePlayerView;
+    private YouTubePlayer activeYouTubePlayer;
 
     // Logic & helpers
-    private Handler timerHandler, recordingTimerHandler;
+    private Handler recordingTimerHandler;
     private Question question;
     private TtsHelper tts;
     private RecordingManager recordingManager;
     private MediaPlayer mediaPlayer;
 
     // State variables
-    private int currentProgress = 0, totalSeconds = 0, maxProgress = 0, recordedSeconds = 0;
+    private int currentProgress = 0, maxProgress = 0, recordedSeconds = 0;
     private int pauseTimeInSeconds = -1;
+    private int ttsOffset = 0; // The character index where the current utterance started
 
     /**
      * Runnable that updates recording duration every second while recording.
@@ -137,21 +140,6 @@ public class PracticeQuestionActivity extends Utilities {
                 recordingSeekBar.setProgress(currentPos);
                 recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", currentPos / 60, currentPos % 60));
                 recordingTimerHandler.postDelayed(this, 500);
-            }
-        }
-    };
-
-    /**
-     * Runnable that updates TTS progress bar during speech playback.
-     */
-    private final Runnable timerRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (tts != null && tts.isSpeaking()) {
-                currentProgress++;
-                ttsSeekBar.setProgress(currentProgress);
-                updateTimeLabels();
-                timerHandler.postDelayed(this, 100);
             }
         }
     };
@@ -189,6 +177,8 @@ public class PracticeQuestionActivity extends Utilities {
         ttsSeekBar = findViewById(R.id.ttsSeekBar);
         recordingSeekBar = findViewById(R.id.recordingSeekBar);
         playPauseBtn = findViewById(R.id.playPauseBtn);
+        playPauseBtn.setEnabled(false);
+        playPauseBtn.setAlpha(0.5f); // Visual indication that it is disabled
         recordBtn = findViewById(R.id.recordBtn);
         playRecordingBtn = findViewById(R.id.playRecordingBtn);
         deleteRecordingBtn = findViewById(R.id.deleteRecordingBtn);
@@ -211,6 +201,27 @@ public class PracticeQuestionActivity extends Utilities {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
+        ttsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    currentProgress = progress;
+                    updateTimeLabels();
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                if (tts.isSpeaking()) {
+                    tts.stop();
+                    playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+                }
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                ttsOffset = seekBar.getProgress();
+            }
+        });
+
         deleteRecordingBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -223,9 +234,22 @@ public class PracticeQuestionActivity extends Utilities {
      * Initializes core logic such as TTS and recording manager.
      */
     private void initLogic() {
-        timerHandler = new Handler();
         recordingTimerHandler = new Handler();
         tts = new TtsHelper(this);
+        tts.setTtsInitListener(new TtsHelper.TtsInitListener() {
+            @Override
+            public void onInitStatus(final boolean success) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (success) {
+                            playPauseBtn.setEnabled(true);
+                            playPauseBtn.setAlpha(1.0f);
+                        }
+                    }
+                });
+            }
+        });
         recordingManager = new RecordingManager(this, "practice_" + question.getQuestionId() + ".aac");
 
         tts.setUtteranceProgressListener(new UtteranceProgressListener() {
@@ -235,7 +259,6 @@ public class PracticeQuestionActivity extends Utilities {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        timerHandler.removeCallbacks(timerRunnable);
                         currentProgress = maxProgress;
                         ttsSeekBar.setProgress(maxProgress);
                         updateTimeLabels();
@@ -244,6 +267,18 @@ public class PracticeQuestionActivity extends Utilities {
                 });
             }
             @Override public void onError(String utteranceId) {}
+
+            @Override
+            public void onRangeStart(String utteranceId, int start, int end, int frame) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentProgress = ttsOffset + start;
+                        ttsSeekBar.setProgress(currentProgress);
+                        updateTimeLabels();
+                    }
+                });
+            }
         });
     }
 
@@ -305,10 +340,28 @@ public class PracticeQuestionActivity extends Utilities {
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
             recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
         } else if (mediaPlayer != null) {
+            // Stop other sources
+            if (tts != null && tts.isSpeaking()) {
+                tts.stop();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+            }
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+
             mediaPlayer.start();
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_pause);
             recordingTimerHandler.post(playbackUpdaterRunnable);
         } else {
+            // Stop other sources
+            if (tts != null && tts.isSpeaking()) {
+                tts.stop();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+            }
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+
             mediaPlayer = new MediaPlayer();
             try {
                 mediaPlayer.setDataSource(path);
@@ -407,20 +460,32 @@ public class PracticeQuestionActivity extends Utilities {
      * @param view The clicked view
      */
     public void playOrPause(View view) {
+        if (!tts.isInitialized()) {
+            Toast.makeText(this, "TTS is still initializing...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (tts.isSpeaking()) {
             tts.stop();
-            timerHandler.removeCallbacks(timerRunnable);
             playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
         } else {
+            // Stop other sources
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+                recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
+            }
+
             if (currentProgress >= maxProgress) {
                 currentProgress = 0;
                 ttsSeekBar.setProgress(0);
-                updateTimeLabels();
             }
-            float pct = (float) ttsSeekBar.getProgress() / ttsSeekBar.getMax();
-            tts.speakFromPercentage(question.getFullQuestion(), pct);
+            ttsOffset = ttsSeekBar.getProgress();
+            tts.speakFromIndex(question.getFullQuestion(), ttsOffset);
             playPauseBtn.setImageResource(android.R.drawable.ic_media_pause);
-            timerHandler.postDelayed(timerRunnable, 100);
         }
     }
 
@@ -428,9 +493,11 @@ public class PracticeQuestionActivity extends Utilities {
      * Updates TTS time labels.
      */
     private void updateTimeLabels() {
-        int sec = currentProgress / 10;
-        currentTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", sec / 60, sec % 60));
-        totalTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", totalSeconds / 60, totalSeconds % 60));
+        // Estimate 15 characters per second for time display
+        int totalSec = maxProgress / 15;
+        int currentSec = currentProgress / 15;
+        currentTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", currentSec / 60, currentSec % 60));
+        totalTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60));
     }
 
     /**
@@ -455,8 +522,7 @@ public class PracticeQuestionActivity extends Utilities {
         if (subTopicTitleTv != null) {
             subTopicTitleTv.setText(question.getSubTopic().equals("null") ? question.getTopic() : question.getSubTopic());
         }
-        totalSeconds = Math.max(question.getFullQuestion().length() / 15, 1);
-        maxProgress = totalSeconds * 10;
+        maxProgress = question.getFullQuestion().length();
         if (ttsSeekBar != null) ttsSeekBar.setMax(maxProgress);
         updateTimeLabels();
         
@@ -492,8 +558,7 @@ public class PracticeQuestionActivity extends Utilities {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (recordedSeconds > 0) showExitDialog();
-                else finish();
+                showExitDialog();
             }
         });
     }
@@ -504,10 +569,11 @@ public class PracticeQuestionActivity extends Utilities {
     private void showExitDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Exit Practice?")
-                .setMessage("Your recording will be deleted.")
+                .setMessage(recordedSeconds > 0 ? "Your recording will be deleted." : "Are you sure you want to leave?")
                 .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        if (recordingManager != null) recordingManager.clearAllFiles();
                         finish();
                     }
                 })
@@ -520,11 +586,7 @@ public class PracticeQuestionActivity extends Utilities {
      * @param v The clicked view
      */
     public void goBack(View v) {
-        if (recordedSeconds > 0) showExitDialog();
-        else { 
-            if (recordingManager != null) recordingManager.clearAllFiles(); 
-            finish(); 
-        }
+        showExitDialog();
     }
 
     /**
@@ -736,7 +798,25 @@ public class PracticeQuestionActivity extends Utilities {
         youTubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
             @Override
             public void onReady(@NonNull YouTubePlayer youTubePlayer) {
+                activeYouTubePlayer = youTubePlayer;
                 youTubePlayer.cueVideo(videoId, 0f);
+            }
+
+            @Override
+            public void onStateChange(@NonNull YouTubePlayer youTubePlayer, @NonNull PlayerConstants.PlayerState state) {
+                if (state == PlayerConstants.PlayerState.PLAYING) {
+                    // Stop TTS
+                    if (tts != null && tts.isSpeaking()) {
+                        tts.stop();
+                        playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+                    }
+                    // Stop Recording Playback
+                    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                        mediaPlayer.pause();
+                        playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+                        recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
+                    }
+                }
             }
         });
     }
@@ -770,6 +850,5 @@ public class PracticeQuestionActivity extends Utilities {
             youTubePlayerView.release();
         }
         recordingTimerHandler.removeCallbacksAndMessages(null);
-        timerHandler.removeCallbacksAndMessages(null);
     }
 }

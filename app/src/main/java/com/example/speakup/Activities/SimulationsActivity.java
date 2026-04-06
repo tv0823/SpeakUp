@@ -52,6 +52,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
@@ -90,21 +91,56 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      */
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
-    // UI Components
-    private LinearLayout questionsContainer, timerLayout;
-    private Button btnNext, btnPrevious, btnFinishSim;
-    private TextView tvTimer, questionTitleTv, currentTimeTv, totalTimeTv, recordedTimeTv, playbackSubTitle;
-    private SeekBar ttsSeekBar, recordingSeekBar;
-    private ImageButton playPauseBtn, recordBtn, playRecordingBtn;
+    // --- UI Components ---
+    /** Container for the dynamic question views. */
+    private LinearLayout questionsContainer;
+    /** Layout containing the global countdown timer. */
+    private LinearLayout timerLayout;
+    /** Navigation button for the next question. */
+    private Button btnNext;
+    /** Navigation button for the previous question. */
+    private Button btnPrevious;
+    /** Button to finish and submit the full simulation. */
+    private Button btnFinishSim;
+    /** Global countdown timer text. */
+    private TextView tvTimer;
+    /** Title of the current active question. */
+    private TextView questionTitleTv;
+    /** Current playback time label for TTS. */
+    private TextView currentTimeTv;
+    /** Total duration label for TTS. */
+    private TextView totalTimeTv;
+    /** Duration label for the user's recorded answer. */
+    private TextView recordedTimeTv;
+    /** Subtitle/context for the playback section. */
+    private TextView playbackSubTitle;
+    /** SeekBar for tracking and seeking through TTS playback. */
+    private SeekBar ttsSeekBar;
+    /** SeekBar for tracking and seeking through recorded answer playback. */
+    private SeekBar recordingSeekBar;
+    /** Toggle button for TTS play/pause. */
+    private ImageButton playPauseBtn;
+    /** Main action button for recording/pausing audio. */
+    private ImageButton recordBtn;
+    /** Toggle button for recorded audio play/pause. */
+    private ImageButton playRecordingBtn;
+    /** Container for visual pause markers in the recording timeline. */
     private FrameLayout linesContainer;
+    /** View for displaying YouTube video content for specific questions. */
     private YouTubePlayerView youTubePlayerView;
+    /** Reference to the active YouTube player instance. */
     private YouTubePlayer activeYouTubePlayer;
+    /** Current YouTube video ID being displayed. */
     private String currentVideoId;
 
-    // Logic Helpers
-    private Handler timerHandler, recordingTimerHandler;
+    // --- Logic Helpers ---
+    /** Handler for managing recording-related UI updates. */
+    private Handler recordingTimerHandler;
+    /** Helper class for managing Android TextToSpeech engine. */
     private TtsHelper tts;
+    /** Global 30-minute countdown timer for the entire simulation. */
     private CountDownTimer simulationTimer;
+    /** Player for auditioning the user's recorded answers. */
     private MediaPlayer mediaPlayer;
 
     // State Variables
@@ -123,13 +159,20 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      */
     private int currentQuestionIndex = 0;
 
-    /**
-     * The recording manager for the current question.
-     */
+    /** The recording manager for the current question being practiced. */
     private RecordingManager currentRecordingManager;
 
-    private int currentProgress = 0, totalSeconds = 0, maxProgress = 0, recordedSeconds = 0;
+    /** Current character-level progress of the TTS playback. */
+    private int currentProgress = 0;
+    /** Maximum length (characters) of the current question text. */
+    private int maxProgress = 0;
+    /** Total duration in seconds of the current recording. */
+    private int recordedSeconds = 0;
+    /** Offset in seconds representing the last pause point in the recording. */
     private int pauseTimeInSeconds = -1;
+    /** The character index where the current TTS utterance started (used for seeking). */
+    private int ttsOffset = 0;
+    /** Flag to prevent multiple instances of the finish confirmation dialog. */
     private boolean isFinishDialogOpen = false;
 
     /**
@@ -183,6 +226,9 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         linesContainer = findViewById(R.id.linesContainer);
         youTubePlayerView = findViewById(R.id.youtube_player_view);
 
+        playPauseBtn.setEnabled(false);
+        playPauseBtn.setAlpha(0.5f);
+
         youTubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
             @Override
             public void onReady(@NonNull YouTubePlayer youTubePlayer) {
@@ -190,6 +236,44 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 if (currentVideoId != null) {
                     activeYouTubePlayer.cueVideo(currentVideoId, 0f);
                 }
+            }
+
+            @Override
+            public void onStateChange(@NonNull YouTubePlayer youTubePlayer, @NonNull PlayerConstants.PlayerState state) {
+                if (state == PlayerConstants.PlayerState.PLAYING) {
+                    // Stop TTS
+                    if (tts != null && tts.isSpeaking()) {
+                        tts.stop();
+                        playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+                    }
+                    // Stop Recording Playback
+                    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                        mediaPlayer.pause();
+                        playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+                        recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
+                    }
+                }
+            }
+        });
+
+        ttsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    currentProgress = progress;
+                    updateTimeLabels();
+                }
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                if (tts.isSpeaking()) {
+                    tts.stop();
+                    playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+                }
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                ttsOffset = seekBar.getProgress();
             }
         });
 
@@ -223,9 +307,23 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * Initializes core logic helpers including TTS and progress progress handlers.
      */
     private void initLogic() {
-        timerHandler = new Handler();
         recordingTimerHandler = new Handler();
         tts = new TtsHelper(this);
+
+        tts.setTtsInitListener(new TtsHelper.TtsInitListener() {
+            @Override
+            public void onInitStatus(final boolean success) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (success) {
+                            playPauseBtn.setEnabled(true);
+                            playPauseBtn.setAlpha(1.0f);
+                        }
+                    }
+                });
+            }
+        });
 
         tts.setUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
@@ -236,7 +334,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        timerHandler.removeCallbacks(timerRunnable);
                         currentProgress = maxProgress;
                         ttsSeekBar.setProgress(maxProgress);
                         updateTimeLabels();
@@ -247,7 +344,21 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
             @Override
             public void onError(String utteranceId) {}
+
+            @Override
+            public void onRangeStart(String utteranceId, int start, int end, int frame) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentProgress = ttsOffset + start;
+                        ttsSeekBar.setProgress(currentProgress);
+                        updateTimeLabels();
+                    }
+                });
+            }
         });
+        
+        setupBackPress();
     }
 
     /**
@@ -466,7 +577,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      */
     private void loadQuestion(int index) {
         tts.stop();
-        timerHandler.removeCallbacks(timerRunnable);
 
         Question q = questions.get(index);
         currentRecordingManager = recordingManagers.get(index);
@@ -474,8 +584,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         questionTitleTv.setText(String.format(Locale.getDefault(), "Question %d/%d: %s", index + 1, questions.size(), q.getCategory()));
         playbackSubTitle.setText(q.getSubTopic());
 
-        totalSeconds = Math.max(q.getFullQuestion().length() / 15, 1);
-        maxProgress = totalSeconds * 10;
+        maxProgress = q.getFullQuestion().length();
         ttsSeekBar.setMax(maxProgress);
         currentProgress = 0;
         ttsSeekBar.setProgress(0);
@@ -505,20 +614,33 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * Toggles the Text-to-Speech playback of the current question.
      */
     private void playOrPause() {
+        if (!tts.isInitialized()) {
+            Toast.makeText(this, "TTS is still initializing...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (tts.isSpeaking()) {
             tts.stop();
-            timerHandler.removeCallbacks(timerRunnable);
             playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
         } else {
+            // Stop other sources
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
+                recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
+            }
+
             if (currentProgress >= maxProgress) {
                 currentProgress = 0;
                 ttsSeekBar.setProgress(0);
                 updateTimeLabels();
             }
-            float pct = (float) ttsSeekBar.getProgress() / ttsSeekBar.getMax();
-            tts.speakFromPercentage(questions.get(currentQuestionIndex).getFullQuestion(), pct);
+            ttsOffset = ttsSeekBar.getProgress();
+            tts.speakFromIndex(questions.get(currentQuestionIndex).getFullQuestion(), ttsOffset);
             playPauseBtn.setImageResource(android.R.drawable.ic_media_pause);
-            timerHandler.postDelayed(timerRunnable, 100);
         }
     }
 
@@ -576,10 +698,28 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
             recordingTimerHandler.removeCallbacks(playbackUpdaterRunnable);
         } else if (mediaPlayer != null) {
+            // Stop other sources
+            if (tts != null && tts.isSpeaking()) {
+                tts.stop();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+            }
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+            
             mediaPlayer.start();
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_pause);
             recordingTimerHandler.post(playbackUpdaterRunnable);
         } else {
+            // Stop other sources
+            if (tts != null && tts.isSpeaking()) {
+                tts.stop();
+                playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
+            }
+            if (activeYouTubePlayer != null) {
+                activeYouTubePlayer.pause();
+            }
+
             mediaPlayer = new MediaPlayer();
             try {
                 mediaPlayer.setDataSource(path);
@@ -639,6 +779,9 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         playRecordingBtn.setImageResource(android.R.drawable.ic_media_play);
     }
 
+    /**
+     * Entry point to finish the simulation. Defaults to a confirmed finish.
+     */
     private void finishSimulation() {
         finishSimulation(false);
     }
@@ -1005,11 +1148,24 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 });
     }
 
+    /**
+     * Builds a human-readable label for the simulation session based on the current date.
+     *
+     * @param simulationDate The date/time the simulation was completed.
+     * @return A formatted string (e.g. "Simulation 06/04/2026 17:00").
+     */
     private String buildSimulationSessionLabel(Date simulationDate) {
         SimpleDateFormat sdf = new SimpleDateFormat("Simulation dd/MM/yyyy HH:mm", Locale.getDefault());
         return sdf.format(simulationDate);
     }
 
+    /**
+     * Parses a feedback section JSON object into a formatted string.
+     *
+     * @param section The JSON object containing "keep" and "improve" fields.
+     * @return A formatted multi-line string.
+     * @throws JSONException If the JSON format is invalid.
+     */
     private String parseFeedbackSection(JSONObject section) throws JSONException {
         return "Keep: " + section.getString("keep") + "\nImprove: " + section.getString("improve");
     }
@@ -1051,16 +1207,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Called when the activity is about to be destroyed.
-     * <p>
-     * Cleans up resources to prevent memory leaks:
-     * <ul>
-     *     <li>Destroys Text-to-Speech engine (tts)</li>
-     *     <li>Cancels simulation timers</li>
-     *     <li>Releases MediaPlayer and YouTubePlayerView</li>
-     *     <li>Releases all RecordingManager instances</li>
-     *     <li>Removes all pending callbacks from handlers</li>
-     * </ul>
+     * Cleans up resources to prevent memory leaks.
      */
     @Override
     protected void onDestroy() {
@@ -1077,32 +1224,49 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         for (int i = 0; i < recordingManagers.size(); i++) {
             recordingManagers.get(i).release();
         }
-        timerHandler.removeCallbacksAndMessages(null);
         recordingTimerHandler.removeCallbacksAndMessages(null);
     }
 
     /**
-     * Runnable that updates TTS progress and UI labels.
-     * <p>
-     * Runs periodically (every 100ms) while TTS is speaking.
-     * Updates:
-     * <ul>
-     *     <li>Current progress</li>
-     *     <li>TTS SeekBar</li>
-     *     <li>Time labels</li>
-     * </ul>
+     * Configures the system back button behavior to show the exit confirmation dialog.
      */
-    private final Runnable timerRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (tts != null && tts.isSpeaking()) {
-                currentProgress++;
-                ttsSeekBar.setProgress(currentProgress);
-                updateTimeLabels();
-                timerHandler.postDelayed(this, 100);
+    private void setupBackPress() {
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                showExitDialog();
             }
-        }
-    };
+        });
+    }
+
+    /**
+     * Displays an alert dialog asking the user if they are sure they want to exit the simulation.
+     * Warning: Confirmed exit results in the loss of all current simulation data and local audio files.
+     */
+    private void showExitDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Exit Simulation?")
+                .setMessage("Are you sure you want to exit? All simulation progress and recordings will be lost.")
+                .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        for (RecordingManager rm : recordingManagers) {
+                            if (rm != null) rm.clearAllFiles();
+                        }
+                        finish();
+                    }
+                })
+                .setNegativeButton("Stay", null).show();
+    }
+
+    /**
+     * UI triggered method to navigate back with confirmation.
+     *
+     * @param v The clicked view (usually a back arrow).
+     */
+    public void goBack(View v) {
+        showExitDialog();
+    }
 
     /**
      * Runnable that updates the recording timer and progress.
@@ -1153,14 +1317,14 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     };
 
     /**
-     * Updates the simulation time labels.
-     * <p>
-     * Updates the current time and total time TextViews based on {@link #currentProgress} and {@link #totalSeconds}.
+     * Updates the TTS playback time labels based on char-level progress.
      */
     private void updateTimeLabels() {
-        int sec = currentProgress / 10;
-        currentTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", sec / 60, sec % 60));
-        totalTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", totalSeconds / 60, totalSeconds % 60));
+        // Estimate 15 characters per second for time display
+        int totalSec = maxProgress / 15;
+        int currentSec = currentProgress / 15;
+        currentTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", currentSec / 60, currentSec % 60));
+        totalTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60));
     }
 
     /**

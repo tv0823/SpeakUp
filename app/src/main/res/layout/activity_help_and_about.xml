@@ -231,7 +231,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="This app was developed by a team of educators and AI specialists to provide personalized feedback and improve your English speaking skills. \nCreated by: Tal Weintraub"
+                android:text="This app was developed to provide personalized feedback and improve your English speaking skills.\n\nProgrammed by: Tal Weintraub\nGuiding Teacher: Alber Levi\nQuestion Database: https://nataliaps0.wixsite.com/english-well/itest"
                 android:textColor="#333333"
                 android:textSize="14sp" />
 
