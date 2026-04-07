@@ -228,12 +228,56 @@
 
             <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="2" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="This app was developed to provide personalized feedback and improve your English speaking skills.\n\nProgrammed by: Tal Weintraub\nGuiding Teacher: Alber Levi\nQuestion Database: https://nataliaps0.wixsite.com/english-well/itest"
-                android:textColor="#333333"
-                android:textSize="14sp" />
+                android:background="@drawable/layout_border"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="This app was developed to provide personalized feedback and improve your English speaking skills."
+                    android:textColor="#333333"
+                    android:textSize="14sp" />
+
+                <Space android:layout_width="match_parent" android:layout_height="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Programmed by: Tal Weintraub"
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Guiding Teacher: Albert Levi\nThank you for supporting me and helping me create this wonderfull app"
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Question Database from:"
+                    android:textColor="#78909C"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:autoLink="web"
+                    android:linksClickable="true"
+                    android:text="https://nataliaps0.wixsite.com/english-well/itest"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="15" />
 
