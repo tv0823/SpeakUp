@@ -91,9 +91,24 @@ public class QuickAccessFragment extends Fragment {
      */
     private ProgressDialog chartProgressDialog;
 
+    /**
+     * Constant representing the 'Personal Questions' category.
+     */
     private static final String CATEGORY_PERSONAL = "Personal Questions";
+
+    /**
+     * Constant representing the 'Video Clip Questions' category.
+     */
     private static final String CATEGORY_VIDEO = "Video Clip Questions";
+
+    /**
+     * Constant representing the 'Project Questions' category.
+     */
     private static final String CATEGORY_PROJECT = "Project Questions";
+
+    /**
+     * Constant representing the 'Simulations' category.
+     */
     private static final String CATEGORY_SIMULATIONS = "Simulations";
 
     /**
@@ -350,7 +365,11 @@ public class QuickAccessFragment extends Fragment {
     }
 
     /**
-     * Fetches all recordings (optionally filtered), sorts by date, and renders the cumulative average.
+     * Fetches all recordings from Firebase, optionally filters them by a set of allowed question IDs,
+     * sorts them chronologically, calculates the cumulative average score, and renders the chart.
+     *
+     * @param allowedQuestionIds A set of question IDs to include; if null, all recordings are included.
+     * @param label              The label to display for the data set in the chart.
      */
     private void fetchAndRenderChartCumulativeProgress(@Nullable Set<String> allowedQuestionIds, @NonNull String label) {
         if (userRecordingsRef == null) return;
@@ -430,7 +449,12 @@ public class QuickAccessFragment extends Fragment {
     }
 
     /**
-     * Renders a list of scores as a line progress.
+     * Renders the provided list of score points on the {@link LineChart}.
+     * Configures the dataset appearance, average grade display, and axis formatting.
+     *
+     * @param points       A list of float values representing the data points to plot.
+     * @param label        The label for the data series.
+     * @param showDotsOnly If true, increases circle radius and hides X-axis labels (typically for simulation dots).
      */
     private void renderChartProgress(ArrayList<Float> points, String label, boolean showDotsOnly) {
         if (!isAdded() || lineChart == null) return;
@@ -504,7 +528,7 @@ public class QuickAccessFragment extends Fragment {
     /**
      * Manually sorts a list of simulations by date using bubble sort.
      *
-     * @param sims The list to sort.
+     * @param sims The list of simulations to sort.
      */
     private void sortSimulationsByDate(ArrayList<Simulation> sims) {
         int n = sims.size();
