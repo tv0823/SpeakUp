@@ -76,11 +76,11 @@ import java.util.Random;
  * <p>
  * This activity handles the entire simulation lifecycle:
  * <ul>
- *     <li>Random selection of questions (1 Personal, 1 Project, 2 Video).</li>
- *     <li>A 30-minute global countdown timer.</li>
- *     <li>Multi-question navigation and audio recording.</li>
- *     <li>Batch AI analysis of all 4 recordings via Gemini.</li>
- *     <li>Saving simulation results and individual recordings to Firebase.</li>
+ * <li>Random selection of questions (1 Personal, 1 Project, 2 Video).</li>
+ * <li>A 30-minute global countdown timer.</li>
+ * <li>Multi-question navigation and audio recording.</li>
+ * <li>Batch AI analysis of all 4 recordings via Gemini.</li>
+ * <li>Saving simulation results and individual recordings to Firebase.</li>
  * </ul>
  * </p>
  */
@@ -170,7 +170,10 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     private int recordedSeconds = 0;
     /** Offset in seconds representing the last pause point in the recording. */
     private int pauseTimeInSeconds = -1;
-    /** The character index where the current TTS utterance started (used for seeking). */
+    /**
+     * The character index where the current TTS utterance started (used for
+     * seeking).
+     */
     private int ttsOffset = 0;
     /** Flag to prevent multiple instances of the finish confirmation dialog. */
     private boolean isFinishDialogOpen = false;
@@ -186,9 +189,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     private long remainingSimulationMillis = SIMULATION_DURATION_MS;
 
     /**
-     * Initializes the activity, sets the content view, and triggers data loading if auto-start is requested.
+     * Initializes the activity, sets the content view, and triggers data loading if
+     * auto-start is requested.
      *
-     * @param savedInstanceState If non-null, this activity is being re-constructed from a previous saved state.
+     * @param savedInstanceState If non-null, this activity is being re-constructed
+     *                           from a previous saved state.
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,7 +244,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             }
 
             @Override
-            public void onStateChange(@NonNull YouTubePlayer youTubePlayer, @NonNull PlayerConstants.PlayerState state) {
+            public void onStateChange(@NonNull YouTubePlayer youTubePlayer,
+                    @NonNull PlayerConstants.PlayerState state) {
                 if (state == PlayerConstants.PlayerState.PLAYING) {
                     // Stop TTS
                     if (tts != null && tts.isSpeaking()) {
@@ -264,6 +270,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     updateTimeLabels();
                 }
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if (tts.isSpeaking()) {
@@ -271,6 +278,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
                 }
             }
+
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 ttsOffset = seekBar.getProgress();
@@ -298,8 +306,14 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     mediaPlayer.seekTo(progress * 1000);
                 }
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
     }
 
@@ -327,7 +341,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
         tts.setUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
-            public void onStart(String utteranceId) {}
+            public void onStart(String utteranceId) {
+            }
 
             @Override
             public void onDone(String utteranceId) {
@@ -343,7 +358,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             }
 
             @Override
-            public void onError(String utteranceId) {}
+            public void onError(String utteranceId) {
+            }
 
             @Override
             public void onRangeStart(String utteranceId, int start, int end, int frame) {
@@ -357,13 +373,15 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 });
             }
         });
-        
+
         setupBackPress();
     }
 
     /**
-     * Fetches a randomized set of 4 questions from Firebase to form a COBE exam simulation.
-     * Selects 1 Personal Response, 1 Project Presentation, and 2 questions from a single Video Clip.
+     * Fetches a randomized set of 4 questions from Firebase to form a COBE exam
+     * simulation.
+     * Selects 1 Personal Response, 1 Project Presentation, and 2 questions from a
+     * single Video Clip.
      */
     private void fetchRandomQuestions() {
         final ProgressDialog pd = new ProgressDialog(this);
@@ -385,7 +403,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     for (DataSnapshot topicSnap : categorySnap.getChildren()) {
                         for (DataSnapshot questionSnap : topicSnap.getChildren()) {
                             Question q = questionSnap.getValue(Question.class);
-                            if (q == null || q.getQuestionId() == null) continue;
+                            if (q == null || q.getQuestionId() == null)
+                                continue;
 
                             String catSafe = (category != null) ? category.trim() : "";
 
@@ -413,7 +432,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
                 ArrayList<ArrayList<Question>> eligibleGroups = new ArrayList<>();
                 for (ArrayList<Question> group : videoGroups) {
-                    if (group.size() >= 2) eligibleGroups.add(group);
+                    if (group.size() >= 2)
+                        eligibleGroups.add(group);
                 }
 
                 if (!eligibleGroups.isEmpty()) {
@@ -450,9 +470,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @param videoUrls   A list of already processed video URLs.
      * @param videoGroups A list of question lists grouped by URL.
      */
-    private void groupVideoQuestions(Question q, ArrayList<String> videoUrls, ArrayList<ArrayList<Question>> videoGroups) {
+    private void groupVideoQuestions(Question q, ArrayList<String> videoUrls,
+            ArrayList<ArrayList<Question>> videoGroups) {
         String url = q.getVideoUrl();
-        if (url == null || url.isEmpty() || url.equals("null")) return;
+        if (url == null || url.isEmpty() || url.equals("null"))
+            return;
 
         int index = videoUrls.indexOf(url);
         if (index == -1) {
@@ -466,7 +488,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Sets up {@link RecordingManager} instances for each question in the simulation.
+     * Sets up {@link RecordingManager} instances for each question in the
+     * simulation.
      */
     private void setupRecordingManagers() {
         for (RecordingManager rm : recordingManagers) {
@@ -504,7 +527,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Transitions the UI from the intro card to the question flow and starts the global timer.
+     * Transitions the UI from the intro card to the question flow and starts the
+     * global timer.
      */
     private void startSimulationFlow() {
         questionsContainer.setVisibility(View.VISIBLE);
@@ -581,7 +605,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         Question q = questions.get(index);
         currentRecordingManager = recordingManagers.get(index);
 
-        questionTitleTv.setText(String.format(Locale.getDefault(), "Question %d/%d: %s", index + 1, questions.size(), q.getCategory()));
+        questionTitleTv.setText(
+                String.format(Locale.getDefault(), "Question %d/%d: %s", index + 1, questions.size(), q.getCategory()));
         playbackSubTitle.setText(q.getSubTopic());
 
         maxProgress = q.getFullQuestion().length();
@@ -596,13 +621,16 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             youTubePlayerView.setVisibility(View.VISIBLE);
             prepareVideo(q.getVideoUrl());
             View space = findViewById(R.id.videoAudioSpace);
-            if (space != null) space.setVisibility(View.VISIBLE);
+            if (space != null)
+                space.setVisibility(View.VISIBLE);
         } else {
             youTubePlayerView.setVisibility(View.GONE);
             currentVideoId = null;
-            if (activeYouTubePlayer != null) activeYouTubePlayer.pause();
+            if (activeYouTubePlayer != null)
+                activeYouTubePlayer.pause();
             View space = findViewById(R.id.videoAudioSpace);
-            if (space != null) space.setVisibility(View.GONE);
+            if (space != null)
+                space.setVisibility(View.GONE);
         }
 
         btnPrevious.setVisibility(index > 0 ? View.VISIBLE : View.INVISIBLE);
@@ -645,7 +673,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Manages the recording lifecycle for the current question (start, pause, resume, stop).
+     * Manages the recording lifecycle for the current question (start, pause,
+     * resume, stop).
      */
     public void recordBtn() {
         if (currentRecordingManager.isFinalized()) {
@@ -653,7 +682,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             return;
         }
 
-        if (!currentRecordingManager.isRecording() && !currentRecordingManager.isPaused() && !currentRecordingManager.hasPausedOnce()) {
+        if (!currentRecordingManager.isRecording() && !currentRecordingManager.isPaused()
+                && !currentRecordingManager.hasPausedOnce()) {
             currentRecordingManager.startRecordingChunk();
             recordBtn.setImageResource(android.R.drawable.ic_media_pause);
             recordingTimerHandler.postDelayed(recordingTimerRunnable, 100);
@@ -706,7 +736,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             if (activeYouTubePlayer != null) {
                 activeYouTubePlayer.pause();
             }
-            
+
             mediaPlayer.start();
             playRecordingBtn.setImageResource(android.R.drawable.ic_media_pause);
             recordingTimerHandler.post(playbackUpdaterRunnable);
@@ -789,10 +819,12 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     /**
      * Finishes the simulation and triggers the grading process.
      *
-     * @param forceFinishNow If true, bypasses the confirmation dialog (e.g., when timer expires).
+     * @param forceFinishNow If true, bypasses the confirmation dialog (e.g., when
+     *                       timer expires).
      */
     private void finishSimulation(boolean forceFinishNow) {
-        if (isFinishDialogOpen) return;
+        if (isFinishDialogOpen)
+            return;
 
         if (forceFinishNow) {
             pauseSimulationTimer();
@@ -839,12 +871,14 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         ArrayList<String> mimeTypes = new ArrayList<>();
         ArrayList<String> audioFilePaths = new ArrayList<>();
 
-        if (!prepareSimulationPayload(filesBytes, mimeTypes, audioFilePaths)) return;
+        if (!prepareSimulationPayload(filesBytes, mimeTypes, audioFilePaths))
+            return;
         analyzeAndSaveSimulation(filesBytes, mimeTypes, audioFilePaths);
     }
 
     /**
-     * Collects audio data and metadata for all 4 questions to prepare for AI analysis.
+     * Collects audio data and metadata for all 4 questions to prepare for AI
+     * analysis.
      *
      * @param filesBytes     List to populate with audio data byte arrays.
      * @param mimeTypes      List to populate with audio MIME types.
@@ -852,8 +886,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @return true if all data was successfully prepared; false otherwise.
      */
     private boolean prepareSimulationPayload(ArrayList<byte[]> filesBytes,
-                                               ArrayList<String> mimeTypes,
-                                               ArrayList<String> audioFilePaths) {
+            ArrayList<String> mimeTypes,
+            ArrayList<String> audioFilePaths) {
         if (questions == null || recordingManagers == null || questions.size() < 4 || recordingManagers.size() < 4) {
             Toast.makeText(this, "Simulation is not ready (missing questions/recordings).", Toast.LENGTH_SHORT).show();
             return false;
@@ -891,15 +925,16 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Constructs the batch prompt for Gemini and initiates the AI analysis for all recordings.
+     * Constructs the batch prompt for Gemini and initiates the AI analysis for all
+     * recordings.
      *
      * @param filesBytes     Audio data for the 4 recordings.
      * @param mimeTypes      MIME types for the audio files.
      * @param audioFilePaths Local paths for the audio files.
      */
     private void analyzeAndSaveSimulation(ArrayList<byte[]> filesBytes,
-                                          ArrayList<String> mimeTypes,
-                                          ArrayList<String> audioFilePaths) {
+            ArrayList<String> mimeTypes,
+            ArrayList<String> audioFilePaths) {
         ProgressDialog pd = new ProgressDialog(this);
         pd.setCancelable(false);
         pd.setTitle("Analyzing simulation...");
@@ -915,7 +950,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             recordingsDetails.append(i + 1)
                     .append(") Question: ").append(q.getFullQuestion()).append("\n");
 
-            if ("Video Clip Questions".equals(q.getCategory()) && q.getVideoUrl() != null && !q.getVideoUrl().equals("null")) {
+            if ("Video Clip Questions".equals(q.getCategory()) && q.getVideoUrl() != null
+                    && !q.getVideoUrl().equals("null")) {
                 recordingsDetails.append("Video URL: ").append(q.getVideoUrl()).append("\n");
             }
 
@@ -934,7 +970,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             }
 
             categoryPrompts.append("\nQuestion: ").append(q.getFullQuestion());
-            if ("Video Clip Questions".equals(q.getCategory()) && q.getVideoUrl() != null && !q.getVideoUrl().equals("null")) {
+            if ("Video Clip Questions".equals(q.getCategory()) && q.getVideoUrl() != null
+                    && !q.getVideoUrl().equals("null")) {
                 categoryPrompts.append("\nVideo URL: ").append(q.getVideoUrl());
             }
             categoryPrompts.append("\n");
@@ -959,13 +996,15 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             @Override
             public void onFailure(Throwable error) {
                 pd.dismiss();
-                Toast.makeText(SimulationsActivity.this, "Gemini error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(SimulationsActivity.this, "Gemini error: " + error.getMessage(), Toast.LENGTH_LONG)
+                        .show();
             }
         });
     }
 
     /**
-     * Parses the batch AI result and prepares Recording objects for all simulation answers.
+     * Parses the batch AI result and prepares Recording objects for all simulation
+     * answers.
      *
      * @param json           The JSON response from Gemini.
      * @param audioFilePaths Local paths for the audio files.
@@ -1001,7 +1040,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     return;
                 }
 
-                String base = (q.getSubTopic() == null || q.getSubTopic().equals("null")) ? q.getTopic() : q.getSubTopic();
+                String base = (q.getSubTopic() == null || q.getSubTopic().equals("null")) ? q.getTopic()
+                        : q.getSubTopic();
                 String finalTitle = base + " (" + simulationSessionLabel + " - Q" + (i + 1) + ")";
 
                 int totalScore;
@@ -1015,13 +1055,18 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 totalScore = obj.getInt("totalSectionScore");
 
                 JSONObject feedback = obj.getJSONObject("feedback");
-                aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore, parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
-                aiFeedBack.put("delivery", new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
-                aiFeedBack.put("vocabulary", new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
-                aiFeedBack.put("language", new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
+                aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore,
+                        parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
+                aiFeedBack.put("delivery",
+                        new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
+                aiFeedBack.put("vocabulary",
+                        new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
+                aiFeedBack.put("language",
+                        new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
                 aiFeedBack.put("overall", new TopicDetail(totalScore, feedback.getString("overallSummary")));
 
-                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, simulationDate, totalScore, aiFeedBack);
+                Recording rec = new Recording(userId, q.getQuestionId(), finalTitle, simulationDate, totalScore,
+                        aiFeedBack);
                 rec.setRecordingId(recordingId);
 
                 recordingsToSave.add(rec);
@@ -1030,10 +1075,12 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             }
 
             int overallScore = 0;
-            for (int s : scores) overallScore += s;
+            for (int s : scores)
+                overallScore += s;
             overallScore = Math.round(overallScore / 4f);
 
-            uploadRecordingsSequentially(0, recordingsToSave, recordingIds, audioFilePaths, overallScore, simulationDate);
+            uploadRecordingsSequentially(0, recordingsToSave, recordingIds, audioFilePaths, overallScore,
+                    simulationDate);
         } catch (JSONException e) {
             Toast.makeText(this, "Failed parsing Gemini JSON.", Toast.LENGTH_SHORT).show();
             Log.e("SimulationsActivity", "Parse error", e);
@@ -1041,7 +1088,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Sequentially uploads recording files to Firebase Storage and their metadata to the Database.
+     * Sequentially uploads recording files to Firebase Storage and their metadata
+     * to the Database.
      *
      * @param idx              Current index in the recordings list.
      * @param recordingsToSave List of Recording objects.
@@ -1051,11 +1099,11 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @param simulationDate   Date the simulation was completed.
      */
     private void uploadRecordingsSequentially(final int idx,
-                                                final ArrayList<Recording> recordingsToSave,
-                                                final ArrayList<String> recordingIds,
-                                                final ArrayList<String> audioFilePaths,
-                                                final int overallScore,
-                                                final Date simulationDate) {
+            final ArrayList<Recording> recordingsToSave,
+            final ArrayList<String> recordingIds,
+            final ArrayList<String> audioFilePaths,
+            final int overallScore,
+            final Date simulationDate) {
         final int total = recordingsToSave.size();
         if (idx >= total) {
             createSimulationAndNavigate(recordingsToSave, recordingIds, overallScore, simulationDate);
@@ -1082,14 +1130,16 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                                     @Override
                                     public void onSuccess(Void unused) {
                                         savingPd.dismiss();
-                                        uploadRecordingsSequentially(idx + 1, recordingsToSave, recordingIds, audioFilePaths, overallScore, simulationDate);
+                                        uploadRecordingsSequentially(idx + 1, recordingsToSave, recordingIds,
+                                                audioFilePaths, overallScore, simulationDate);
                                     }
                                 })
                                 .addOnFailureListener(new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         savingPd.dismiss();
-                                        Toast.makeText(SimulationsActivity.this, "Failed saving recording: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                        Toast.makeText(SimulationsActivity.this,
+                                                "Failed saving recording: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 });
                     }
@@ -1098,13 +1148,15 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         savingPd.dismiss();
-                        Toast.makeText(SimulationsActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(SimulationsActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG)
+                                .show();
                     }
                 });
     }
 
     /**
-     * Persists the global Simulation object to Firebase and navigates to the results screen.
+     * Persists the global Simulation object to Firebase and navigates to the
+     * results screen.
      *
      * @param recordingsToSave List of finalized Recording objects.
      * @param recordingIds     List of finalized recording IDs.
@@ -1112,9 +1164,9 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @param simulationDate   Completion timestamp.
      */
     private void createSimulationAndNavigate(ArrayList<Recording> recordingsToSave,
-                                              ArrayList<String> recordingIds,
-                                              int overallScore,
-                                              Date simulationDate) {
+            ArrayList<String> recordingIds,
+            int overallScore,
+            Date simulationDate) {
         String userId = recordingsToSave.get(0).getUserId();
         String simulationId = refSimulations.push().getKey();
         if (simulationId == null) {
@@ -1143,13 +1195,15 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(SimulationsActivity.this, "Failed saving simulation: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(SimulationsActivity.this, "Failed saving simulation: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     /**
-     * Builds a human-readable label for the simulation session based on the current date.
+     * Builds a human-readable label for the simulation session based on the current
+     * date.
      *
      * @param simulationDate The date/time the simulation was completed.
      * @return A formatted string (e.g. "Simulation 06/04/2026 17:00").
@@ -1177,7 +1231,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      */
     private void prepareVideo(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
-        if (videoId.isEmpty()) return;
+        if (videoId.isEmpty())
+            return;
 
         currentVideoId = videoId;
         if (activeYouTubePlayer != null) {
@@ -1192,7 +1247,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @return The 11-character video ID or empty string if not found.
      */
     private String extractVideoId(String videoUrl) {
-        if (videoUrl == null || videoUrl.trim().isEmpty()) return "";
+        if (videoUrl == null || videoUrl.trim().isEmpty())
+            return "";
         String videoId = "";
         if (videoUrl.contains("v=")) {
             videoId = videoUrl.split("v=")[1].split("&")[0];
@@ -1212,8 +1268,10 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (tts != null) tts.destroy();
-        if (simulationTimer != null) simulationTimer.cancel();
+        if (tts != null)
+            tts.destroy();
+        if (simulationTimer != null)
+            simulationTimer.cancel();
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
@@ -1228,7 +1286,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Configures the system back button behavior to show the exit confirmation dialog.
+     * Configures the system back button behavior to show the exit confirmation
+     * dialog.
      */
     private void setupBackPress() {
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
@@ -1240,8 +1299,10 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * Displays an alert dialog asking the user if they are sure they want to exit the simulation.
-     * Warning: Confirmed exit results in the loss of all current simulation data and local audio files.
+     * Displays an alert dialog asking the user if they are sure they want to exit
+     * the simulation.
+     * Warning: Confirmed exit results in the loss of all current simulation data
+     * and local audio files.
      */
     private void showExitDialog() {
         new AlertDialog.Builder(this)
@@ -1251,7 +1312,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         for (RecordingManager rm : recordingManagers) {
-                            if (rm != null) rm.clearAllFiles();
+                            if (rm != null)
+                                rm.clearAllFiles();
                         }
                         finish();
                     }
@@ -1265,10 +1327,10 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * Runs every 1000ms (1 second) while recording.
      * Updates:
      * <ul>
-     *     <li>Recorded seconds counter</li>
-     *     <li>Recording time label</li>
-     *     <li>Recording SeekBar</li>
-     *     <li>Position of pause/resume line</li>
+     * <li>Recorded seconds counter</li>
+     * <li>Recording time label</li>
+     * <li>Recording SeekBar</li>
+     * <li>Position of pause/resume line</li>
      * </ul>
      */
     private final Runnable recordingTimerRunnable = new Runnable() {
@@ -1291,8 +1353,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * Runs every 500ms while MediaPlayer is playing.
      * Updates:
      * <ul>
-     *     <li>Recording SeekBar position</li>
-     *     <li>Recorded time label</li>
+     * <li>Recording SeekBar position</li>
+     * <li>Recorded time label</li>
      * </ul>
      */
     private final Runnable playbackUpdaterRunnable = new Runnable() {
@@ -1301,7 +1363,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
             if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                 int currentPos = mediaPlayer.getCurrentPosition() / 1000;
                 recordingSeekBar.setProgress(currentPos);
-                recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", currentPos / 60, currentPos % 60));
+                recordedTimeTv
+                        .setText(String.format(Locale.getDefault(), "%02d:%02d", currentPos / 60, currentPos % 60));
                 recordingTimerHandler.postDelayed(this, 500);
             }
         }
@@ -1324,7 +1387,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * Uses {@link #recordedSeconds} to update the TextView.
      */
     private void updateRecordedTimeLabel() {
-        recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", recordedSeconds / 60, recordedSeconds % 60));
+        recordedTimeTv
+                .setText(String.format(Locale.getDefault(), "%02d:%02d", recordedSeconds / 60, recordedSeconds % 60));
     }
 
     /**
@@ -1348,11 +1412,13 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     /**
      * Updates the position of the pause line marker on the waveform/SeekBar.
      * <p>
-     * Calculates X position proportionally to the recorded seconds and SeekBar max value.
+     * Calculates X position proportionally to the recorded seconds and SeekBar max
+     * value.
      * Runs on the linesContainer's post() to ensure correct width measurements.
      */
     private void updateLinePosition() {
-        if (pauseTimeInSeconds == -1) return;
+        if (pauseTimeInSeconds == -1)
+            return;
         linesContainer.post(new Runnable() {
             @Override
             public void run() {
@@ -1375,8 +1441,10 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * If permission is not granted, requests it at runtime.
      */
     private void checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO },
+                    REQUEST_RECORD_AUDIO_PERMISSION);
         }
     }
 
@@ -1388,7 +1456,8 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @param grantResults The grant results for the corresponding permissions
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {

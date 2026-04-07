@@ -69,22 +69,22 @@ import java.util.Map;
  *
  * <p>This activity allows the user to:
  * <ul>
- *     <li>Listen to a question using Text-to-Speech (TTS)</li>
- *     <li>Record their spoken answer</li>
- *     <li>Pause and resume recordings</li>
- *     <li>Play back their recording</li>
- *     <li>Send the recording to AI (Gemini) for evaluation</li>
- *     <li>Upload results and audio to Firebase</li>
+ * <li>Listen to a question using Text-to-Speech (TTS)</li>
+ * <li>Record their spoken answer</li>
+ * <li>Pause and resume recordings</li>
+ * <li>Play back their recording</li>
+ * <li>Send the recording to AI (Gemini) for evaluation</li>
+ * <li>Upload results and audio to Firebase</li>
  * </ul>
  *
  * <p>It also supports video-based questions via YouTube integration.
  *
  * <p>Main components:
  * <ul>
- *     <li>{@link TtsHelper} - Handles text-to-speech playback</li>
- *     <li>{@link RecordingManager} - Manages audio recording lifecycle</li>
- *     <li>{@link MediaPlayer} - Plays recorded audio</li>
- *     <li>{@link GeminiManager} - Sends audio for AI evaluation</li>
+ * <li>{@link TtsHelper} - Handles text-to-speech playback</li>
+ * <li>{@link RecordingManager} - Manages audio recording lifecycle</li>
+ * <li>{@link MediaPlayer} - Plays recorded audio</li>
+ * <li>{@link GeminiManager} - Sends audio for AI evaluation</li>
  * </ul>
  *
  */
@@ -151,10 +151,10 @@ public class PracticeQuestionActivity extends Utilities {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_practice_question);
-        
+
         initViews();
         handleIntent();
-        
+
         if (question == null) {
             Toast.makeText(this, "Error: Question data missing", Toast.LENGTH_SHORT).show();
             finish();
@@ -195,10 +195,17 @@ public class PracticeQuestionActivity extends Utilities {
         recordingSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && mediaPlayer != null) mediaPlayer.seekTo(progress * 1000);
+                if (fromUser && mediaPlayer != null)
+                    mediaPlayer.seekTo(progress * 1000);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
 
         ttsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -209,6 +216,7 @@ public class PracticeQuestionActivity extends Utilities {
                     updateTimeLabels();
                 }
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if (tts.isSpeaking()) {
@@ -216,6 +224,7 @@ public class PracticeQuestionActivity extends Utilities {
                     playPauseBtn.setImageResource(android.R.drawable.ic_media_play);
                 }
             }
+
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 ttsOffset = seekBar.getProgress();
@@ -253,7 +262,10 @@ public class PracticeQuestionActivity extends Utilities {
         recordingManager = new RecordingManager(this, "practice_" + question.getQuestionId() + ".aac");
 
         tts.setUtteranceProgressListener(new UtteranceProgressListener() {
-            @Override public void onStart(String utteranceId) {}
+            @Override
+            public void onStart(String utteranceId) {
+            }
+
             @Override
             public void onDone(String utteranceId) {
                 runOnUiThread(new Runnable() {
@@ -266,7 +278,10 @@ public class PracticeQuestionActivity extends Utilities {
                     }
                 });
             }
-            @Override public void onError(String utteranceId) {}
+
+            @Override
+            public void onError(String utteranceId) {
+            }
 
             @Override
             public void onRangeStart(String utteranceId, int start, int end, int frame) {
@@ -395,7 +410,10 @@ public class PracticeQuestionActivity extends Utilities {
                 .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+                        if (mediaPlayer != null) {
+                            mediaPlayer.release();
+                            mediaPlayer = null;
+                        }
                         recordingManager.clearAllFiles();
                         resetUI();
                     }
@@ -437,7 +455,8 @@ public class PracticeQuestionActivity extends Utilities {
      * Updates position of pause marker on the timeline.
      */
     private void updateLinePosition() {
-        if (pauseTimeInSeconds == -1) return;
+        if (pauseTimeInSeconds == -1)
+            return;
         linesContainer.post(new Runnable() {
             @Override
             public void run() {
@@ -504,7 +523,8 @@ public class PracticeQuestionActivity extends Utilities {
      * Updates recorded time label.
      */
     private void updateRecordedTimeLabel() {
-        recordedTimeTv.setText(String.format(Locale.getDefault(), "%02d:%02d", recordedSeconds / 60, recordedSeconds % 60));
+        recordedTimeTv
+                .setText(String.format(Locale.getDefault(), "%02d:%02d", recordedSeconds / 60, recordedSeconds % 60));
     }
 
     /**
@@ -512,7 +532,8 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void handleIntent() {
         question = (Question) getIntent().getSerializableExtra("question");
-        if (question != null) setupUIWithQuestionData();
+        if (question != null)
+            setupUIWithQuestionData();
     }
 
     /**
@@ -520,12 +541,14 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void setupUIWithQuestionData() {
         if (subTopicTitleTv != null) {
-            subTopicTitleTv.setText(question.getSubTopic().equals("null") ? question.getTopic() : question.getSubTopic());
+            subTopicTitleTv
+                    .setText(question.getSubTopic().equals("null") ? question.getTopic() : question.getSubTopic());
         }
         maxProgress = question.getFullQuestion().length();
-        if (ttsSeekBar != null) ttsSeekBar.setMax(maxProgress);
+        if (ttsSeekBar != null)
+            ttsSeekBar.setMax(maxProgress);
         updateTimeLabels();
-        
+
         if ("Video Clip Questions".equals(question.getCategory())
                 && question.getVideoUrl() != null
                 && !question.getVideoUrl().equals("null")
@@ -534,11 +557,13 @@ public class PracticeQuestionActivity extends Utilities {
             youTubePlayerView.setVisibility(View.VISIBLE);
             setupYouTubePlayer(question.getVideoUrl());
             View space = findViewById(R.id.videoAudioSpace);
-            if (space != null) space.setVisibility(View.VISIBLE);
+            if (space != null)
+                space.setVisibility(View.VISIBLE);
         } else {
             youTubePlayerView.setVisibility(View.GONE);
             View space = findViewById(R.id.videoAudioSpace);
-            if (space != null) space.setVisibility(View.GONE);
+            if (space != null)
+                space.setVisibility(View.GONE);
         }
     }
 
@@ -546,8 +571,10 @@ public class PracticeQuestionActivity extends Utilities {
      * Requests audio recording permission if not granted.
      */
     private void checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO },
+                    REQUEST_RECORD_AUDIO_PERMISSION);
         }
     }
 
@@ -573,7 +600,8 @@ public class PracticeQuestionActivity extends Utilities {
                 .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if (recordingManager != null) recordingManager.clearAllFiles();
+                        if (recordingManager != null)
+                            recordingManager.clearAllFiles();
                         finish();
                     }
                 })
@@ -601,57 +629,66 @@ public class PracticeQuestionActivity extends Utilities {
             }
 
             new AlertDialog.Builder(this)
-                .setTitle("Check answer")
-                .setMessage("Do you want to proceed to check your answer?")
-                .setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String filePath = recordingManager.getFinalFilePath();
+                    .setTitle("Check answer")
+                    .setMessage("Do you want to proceed to check your answer?")
+                    .setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            String filePath = recordingManager.getFinalFilePath();
 
-                        byte[] bytes;
-                        try {
-                            bytes = recordingManager.getBytes(filePath);
-                        } catch (IOException e) {
-                            Log.e("PracticeQuestion", "Error reading file", e);
-                            Toast.makeText(PracticeQuestionActivity.this, "Error reading recording file", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        ProgressDialog pD = new ProgressDialog(PracticeQuestionActivity.this);
-                        pD.setTitle("Analyzing answer...");
-                        pD.setMessage("Waiting for response...");
-                        pD.setCancelable(false);
-                        pD.show();
-
-                        String prompt = "";
-                        switch (question.getCategory()) {
-                            case "Personal Questions": prompt = PERSONAL_PROMPT; break;
-                            case "Project Presentation": prompt = PROJECT_PROMPT; break;
-                            case "Video Clip Questions": prompt = VIDEO_CLIPS_PROMPT; break;
-                        }
-                        prompt += question.getFullQuestion();
-
-                        GeminiManager.getInstance().sendTextWithFilePrompt(prompt, bytes, "audio/aac", new GeminiCallback() {
-                            @Override
-                            public void onSuccess(String result) {
-                                pD.dismiss();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        createRecordingToFirebase(result);
-                                    }
-                                });
+                            byte[] bytes;
+                            try {
+                                bytes = recordingManager.getBytes(filePath);
+                            } catch (IOException e) {
+                                Log.e("PracticeQuestion", "Error reading file", e);
+                                Toast.makeText(PracticeQuestionActivity.this, "Error reading recording file",
+                                        Toast.LENGTH_SHORT).show();
+                                return;
                             }
 
-                            @Override
-                            public void onFailure(Throwable error) {
-                                pD.dismiss();
-                                Toast.makeText(PracticeQuestionActivity.this, "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                            ProgressDialog pD = new ProgressDialog(PracticeQuestionActivity.this);
+                            pD.setTitle("Analyzing answer...");
+                            pD.setMessage("Waiting for response...");
+                            pD.setCancelable(false);
+                            pD.show();
+
+                            String prompt = "";
+                            switch (question.getCategory()) {
+                                case "Personal Questions":
+                                    prompt = PERSONAL_PROMPT;
+                                    break;
+                                case "Project Presentation":
+                                    prompt = PROJECT_PROMPT;
+                                    break;
+                                case "Video Clip Questions":
+                                    prompt = VIDEO_CLIPS_PROMPT;
+                                    break;
                             }
-                        });
-                    }
-                })
-                .setNegativeButton("Cancel", null).show();
+                            prompt += question.getFullQuestion();
+
+                            GeminiManager.getInstance().sendTextWithFilePrompt(prompt, bytes, "audio/aac",
+                                    new GeminiCallback() {
+                                        @Override
+                                        public void onSuccess(String result) {
+                                            pD.dismiss();
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    createRecordingToFirebase(result);
+                                                }
+                                            });
+                                        }
+
+                                        @Override
+                                        public void onFailure(Throwable error) {
+                                            pD.dismiss();
+                                            Toast.makeText(PracticeQuestionActivity.this,
+                                                    "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        }
+                    })
+                    .setNegativeButton("Cancel", null).show();
         } else {
             Toast.makeText(this, "You need to record your answer.", Toast.LENGTH_SHORT).show();
         }
@@ -676,10 +713,14 @@ public class PracticeQuestionActivity extends Utilities {
 
             JSONObject feedback = root.getJSONObject("feedback");
 
-            aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore, parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
-            aiFeedBack.put("delivery", new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
-            aiFeedBack.put("vocabulary", new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
-            aiFeedBack.put("language", new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
+            aiFeedBack.put("topicDevelopment", new TopicDetail(topicDevelopmentScore,
+                    parseFeedbackSection(feedback.getJSONObject("topicDevelopment"))));
+            aiFeedBack.put("delivery",
+                    new TopicDetail(deliveryScore, parseFeedbackSection(feedback.getJSONObject("delivery"))));
+            aiFeedBack.put("vocabulary",
+                    new TopicDetail(vocabularyScore, parseFeedbackSection(feedback.getJSONObject("vocabulary"))));
+            aiFeedBack.put("language",
+                    new TopicDetail(languageScore, parseFeedbackSection(feedback.getJSONObject("language"))));
             aiFeedBack.put("overall", new TopicDetail(totalScore, feedback.getString("overallSummary")));
 
             showNamingDialog(aiFeedBack, totalScore);
@@ -711,39 +752,47 @@ public class PracticeQuestionActivity extends Utilities {
         final EditText eT = new EditText(this);
         eT.setHint("Enter recording name (e.g. My Practice 1)");
         new AlertDialog.Builder(this)
-            .setTitle("Name your recording")
-            .setView(eT)
-            .setCancelable(false)
-            .setPositiveButton("Finish", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    processFirebaseStorageAndDatabase(eT.getText().toString(), feedback, score);
-                }
-            })
-            .show();
+                .setTitle("Name your recording")
+                .setView(eT)
+                .setCancelable(false)
+                .setPositiveButton("Finish", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        processFirebaseStorageAndDatabase(eT.getText().toString(), feedback, score);
+                    }
+                })
+                .show();
     }
 
     /**
      * Saves recording metadata and uploads audio.
      */
-    private void processFirebaseStorageAndDatabase(final String displayTitle, final Map<String, TopicDetail> feedback, final int score) {
+    private void processFirebaseStorageAndDatabase(final String displayTitle, final Map<String, TopicDetail> feedback,
+            final int score) {
         final String userId = refAuth.getCurrentUser().getUid();
-        refRecordings.child(userId).child(question.getQuestionId()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dS) {
-                String finalTitle = displayTitle;
-                if (finalTitle.isEmpty()) {
-                    long count = dS.getChildrenCount() + 1;
-                    String base = (question.getSubTopic() == null || question.getSubTopic().equals("null")) ? question.getTopic() : question.getSubTopic();
-                    finalTitle = base + " " + count;
-                }
-                String recordingId = refRecordings.child(userId).push().getKey();
-                Recording rec = new Recording(userId, question.getQuestionId(), finalTitle, new Date(), score, feedback);
-                rec.setRecordingId(recordingId);
-                uploadAudioFile(rec);
-            }
-            @Override public void onCancelled(@NonNull DatabaseError e) {}
-        });
+        refRecordings.child(userId).child(question.getQuestionId())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dS) {
+                        String finalTitle = displayTitle;
+                        if (finalTitle.isEmpty()) {
+                            long count = dS.getChildrenCount() + 1;
+                            String base = (question.getSubTopic() == null || question.getSubTopic().equals("null"))
+                                    ? question.getTopic()
+                                    : question.getSubTopic();
+                            finalTitle = base + " " + count;
+                        }
+                        String recordingId = refRecordings.child(userId).push().getKey();
+                        Recording rec = new Recording(userId, question.getQuestionId(), finalTitle, new Date(), score,
+                                feedback);
+                        rec.setRecordingId(recordingId);
+                        uploadAudioFile(rec);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError e) {
+                    }
+                });
     }
 
     /**
@@ -761,29 +810,31 @@ public class PracticeQuestionActivity extends Utilities {
         pD.show();
 
         fileRef.putFile(Uri.fromFile(new File(filePath)))
-            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    refRecordings.child(rec.getUserId()).child(rec.getQuestionId()).child(rec.getRecordingId()).setValue(rec).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            pD.dismiss();
-                            Intent si = new Intent(PracticeQuestionActivity.this, ResultsActivity.class);
-                            si.putExtra("recording", rec);
-                            si.putExtra("audio_path", filePath);
-                            startActivity(si);
-                            finish();
-                        }
-                    });
-                }
-            })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    pD.dismiss();
-                    Toast.makeText(PracticeQuestionActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            });
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        refRecordings.child(rec.getUserId()).child(rec.getQuestionId()).child(rec.getRecordingId())
+                                .setValue(rec).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        pD.dismiss();
+                                        Intent si = new Intent(PracticeQuestionActivity.this, ResultsActivity.class);
+                                        si.putExtra("recording", rec);
+                                        si.putExtra("audio_path", filePath);
+                                        startActivity(si);
+                                        finish();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        pD.dismiss();
+                        Toast.makeText(PracticeQuestionActivity.this, "Upload failed: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     /**
@@ -793,8 +844,9 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void setupYouTubePlayer(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
-        if (videoId.isEmpty()) return;
-        
+        if (videoId.isEmpty())
+            return;
+
         youTubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
             @Override
             public void onReady(@NonNull YouTubePlayer youTubePlayer) {
@@ -803,7 +855,8 @@ public class PracticeQuestionActivity extends Utilities {
             }
 
             @Override
-            public void onStateChange(@NonNull YouTubePlayer youTubePlayer, @NonNull PlayerConstants.PlayerState state) {
+            public void onStateChange(@NonNull YouTubePlayer youTubePlayer,
+                    @NonNull PlayerConstants.PlayerState state) {
                 if (state == PlayerConstants.PlayerState.PLAYING) {
                     // Stop TTS
                     if (tts != null && tts.isSpeaking()) {
@@ -828,12 +881,17 @@ public class PracticeQuestionActivity extends Utilities {
      * @return video ID
      */
     private String extractVideoId(String videoUrl) {
-        if (videoUrl == null || videoUrl.trim().isEmpty()) return "";
+        if (videoUrl == null || videoUrl.trim().isEmpty())
+            return "";
         String videoId = "";
-        if (videoUrl.contains("v=")) videoId = videoUrl.split("v=")[1].split("&")[0];
-        else if (videoUrl.contains("youtu.be/")) videoId = videoUrl.split("youtu.be/")[1].split("\\?")[0];
-        else if (videoUrl.contains("embed/")) videoId = videoUrl.split("embed/")[1].split("\\?")[0];
-        else if (videoUrl.length() == 11) videoId = videoUrl;
+        if (videoUrl.contains("v="))
+            videoId = videoUrl.split("v=")[1].split("&")[0];
+        else if (videoUrl.contains("youtu.be/"))
+            videoId = videoUrl.split("youtu.be/")[1].split("\\?")[0];
+        else if (videoUrl.contains("embed/"))
+            videoId = videoUrl.split("embed/")[1].split("\\?")[0];
+        else if (videoUrl.length() == 11)
+            videoId = videoUrl;
         return videoId.trim();
     }
 
@@ -843,9 +901,14 @@ public class PracticeQuestionActivity extends Utilities {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (recordingManager != null) recordingManager.release();
-        if (tts != null) tts.destroy();
-        if (mediaPlayer != null) { mediaPlayer.release(); mediaPlayer = null; }
+        if (recordingManager != null)
+            recordingManager.release();
+        if (tts != null)
+            tts.destroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         if (youTubePlayerView != null) {
             youTubePlayerView.release();
         }

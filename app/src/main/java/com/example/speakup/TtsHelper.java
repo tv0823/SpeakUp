@@ -8,11 +8,15 @@ import android.widget.Toast;
 import java.util.Locale;
 
 /**
- * Helper class for managing Text-To-Speech (TTS) operations within the application.
+ * Helper class for managing Text-To-Speech (TTS) operations within the
+ * application.
  * <p>
- * This class wraps the Android {@link TextToSpeech} engine to provide a simplified interface for
- * text playback. It handles initialization, language selection (US English), and offers
- * specialized functionality like speaking from a specific percentage of the text, which
+ * This class wraps the Android {@link TextToSpeech} engine to provide a
+ * simplified interface for
+ * text playback. It handles initialization, language selection (US English),
+ * and offers
+ * specialized functionality like speaking from a specific percentage of the
+ * text, which
  * is useful for synchronization with UI components like SeekBars.
  * </p>
  */
@@ -23,7 +27,8 @@ public class TtsHelper {
     private TextToSpeech tts;
 
     /**
-     * Flag indicating whether the TTS engine has been successfully initialized and is ready for use.
+     * Flag indicating whether the TTS engine has been successfully initialized and
+     * is ready for use.
      */
     private boolean isInitialized = false;
 
@@ -37,14 +42,18 @@ public class TtsHelper {
     private TtsInitListener initListener;
 
     /**
-     * Constructs a new TtsHelper and begins the asynchronous initialization of the TTS engine.
+     * Constructs a new TtsHelper and begins the asynchronous initialization of the
+     * TTS engine.
      * <p>
-     * On successful initialization, the language is set to {@link Locale#US} and the speech rate
-     * is adjusted to 0.7f for better clarity. If initialization fails or the language is 
+     * On successful initialization, the language is set to {@link Locale#US} and
+     * the speech rate
+     * is adjusted to 0.7f for better clarity. If initialization fails or the
+     * language is
      * unavailable, a {@link Toast} message is displayed to the user.
      * </p>
      *
-     * @param context The {@link Context} used to initialize the engine and display status messages.
+     * @param context The {@link Context} used to initialize the engine and display
+     *                status messages.
      */
     public TtsHelper(final Context context) {
         tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
@@ -58,11 +67,13 @@ public class TtsHelper {
                         // Set a natural speaking rate
                         tts.setSpeechRate(0.7f);
                         isInitialized = true;
-                        if (initListener != null) initListener.onInitStatus(true);
+                        if (initListener != null)
+                            initListener.onInitStatus(true);
                     }
                 } else {
                     Toast.makeText(context, "TTS initialization failed", Toast.LENGTH_SHORT).show();
-                    if (initListener != null) initListener.onInitStatus(false);
+                    if (initListener != null)
+                        initListener.onInitStatus(false);
                 }
             }
         });
@@ -91,31 +102,17 @@ public class TtsHelper {
     }
 
     /**
-     * Registers a listener to receive callbacks during the speech synthesis process.
+     * Registers a listener to receive callbacks during the speech synthesis
+     * process.
      *
-     * @param listener The {@link UtteranceProgressListener} to be notified of speech start, 
+     * @param listener The {@link UtteranceProgressListener} to be notified of
+     *                 speech start,
      *                 completion, and errors.
      */
     public void setUtteranceProgressListener(UtteranceProgressListener listener) {
         if (tts != null) {
             tts.setOnUtteranceProgressListener(listener);
         }
-    }
-
-    /**
-     * Speaks the provided text starting from a position determined by the given percentage.
-     * <p>
-     * This method stops any current playback before starting the new utterance. It calculates
-     * the start index as a direct percentage of the total text length.
-     * </p>
-     *
-     * @param fullText   The complete string of text to be processed.
-     * @param percentage A float between 0.0 (start of text) and 1.0 (end of text) indicating 
-     *                   where playback should begin.
-     */
-    public void speakFromPercentage(String fullText, float percentage) {
-        int charIndex = (int) (fullText.length() * percentage);
-        speakFromIndex(fullText, charIndex);
     }
 
     /**
@@ -128,12 +125,15 @@ public class TtsHelper {
      * @param charIndex The index of the character to start speaking from.
      */
     public void speakFromIndex(String fullText, int charIndex) {
-        if (!isInitialized || fullText == null || fullText.isEmpty()) return;
+        if (!isInitialized || fullText == null || fullText.isEmpty())
+            return;
 
         tts.stop();
 
-        if (charIndex >= fullText.length()) return;
-        if (charIndex < 0) charIndex = 0;
+        if (charIndex >= fullText.length())
+            return;
+        if (charIndex < 0)
+            charIndex = 0;
 
         String remainingText = fullText.substring(charIndex);
 
@@ -163,8 +163,10 @@ public class TtsHelper {
     /**
      * Shuts down the TTS engine and releases associated resources.
      * <p>
-     * This method should be called when the helper is no longer needed (e.g., in {@code onDestroy()} 
-     * of an Activity) to avoid memory leaks and ensure the service is properly closed.
+     * This method should be called when the helper is no longer needed (e.g., in
+     * {@code onDestroy()}
+     * of an Activity) to avoid memory leaks and ensure the service is properly
+     * closed.
      * </p>
      */
     public void destroy() {
