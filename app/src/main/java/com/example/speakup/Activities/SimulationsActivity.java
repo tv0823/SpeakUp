@@ -1260,15 +1260,6 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
     }
 
     /**
-     * UI triggered method to navigate back with confirmation.
-     *
-     * @param v The clicked view (usually a back arrow).
-     */
-    public void goBack(View v) {
-        showExitDialog();
-    }
-
-    /**
      * Runnable that updates the recording timer and progress.
      * <p>
      * Runs every 1000ms (1 second) while recording.
