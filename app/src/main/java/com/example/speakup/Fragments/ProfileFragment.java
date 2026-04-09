@@ -58,6 +58,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import com.yalantis.ucrop.UCrop;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
@@ -449,38 +451,46 @@ public class ProfileFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data_back) {
         super.onActivityResult(requestCode, resultCode, data_back);
 
-        if ((requestCode == REQUEST_IMAGE_CHOOSER) && (resultCode == Activity.RESULT_OK)) {
-            Bitmap finalBitmap = null;
-            Bitmap tempBitmap = null;
-
-            try {
-                if (data_back != null && data_back.getData() != null) {
-                    // --- GALLERY CASE ---
-                    Uri selectedImageUri = data_back.getData();
-                    tempBitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), selectedImageUri);
-                    finalBitmap = Utilities.getRotateBitmap(requireActivity(), selectedImageUri, tempBitmap);
-                    Utilities.saveBitmapToFile(finalBitmap, currentPath);
-                } else if (currentPath != null) {
-                    // --- CAMERA CASE ---
-                    tempBitmap = BitmapFactory.decodeFile(currentPath);
-
-                    // Fix rotation using the String path-based utility method
-                    finalBitmap = Utilities.getRotateBitmap(currentPath, tempBitmap);
-                }
-
-                if (finalBitmap != null) {
-                    iV.setImageBitmap(finalBitmap);
-
-                    // Memory Cleanup: if finalBitmap is a new rotated copy, delete the sideways tempBitmap
-                    if (tempBitmap != null && tempBitmap != finalBitmap) {
-                        tempBitmap.recycle();
-                    }
-                }
-
-            } catch (IOException e) {
-                Log.e("ProfileFragment", "Error processing image", e);
-                Toast.makeText(requireActivity(), "Failed to load image", Toast.LENGTH_LONG).show();
+        if (requestCode == REQUEST_IMAGE_CHOOSER && resultCode == Activity.RESULT_OK) {
+            Uri selectedUri = null;
+            if (data_back != null && data_back.getData() != null) {
+                // --- GALLERY CASE ---
+                selectedUri = data_back.getData();
+            } else if (currentPath != null) {
+                // --- CAMERA CASE ---
+                File file = new File(currentPath);
+                selectedUri = Uri.fromFile(file);
             }
+
+            if (selectedUri != null) {
+                Uri destinationUri = Uri.fromFile(new File(requireActivity().getCacheDir(), "cropped_" + System.currentTimeMillis() + ".jpg"));
+                UCrop.Options options = new UCrop.Options();
+                options.setCircleDimmedLayer(true);
+                options.setShowCropGrid(false);
+                options.setShowCropFrame(false);
+                options.setToolbarColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                options.setStatusBarColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+                options.setToolbarWidgetColor(ContextCompat.getColor(requireContext(), android.R.color.black));
+                options.setActiveControlsWidgetColor(ContextCompat.getColor(requireContext(), android.R.color.holo_blue_dark));
+
+                UCrop.of(selectedUri, destinationUri)
+                        .withAspectRatio(1, 1)
+                        .withOptions(options)
+                        .start(requireContext(), ProfileFragment.this);
+            } else {
+                Toast.makeText(requireActivity(), "Failed to get image URI", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == UCrop.REQUEST_CROP && resultCode == Activity.RESULT_OK) {
+            if (data_back != null) {
+                Uri croppedUri = UCrop.getOutput(data_back);
+                if (croppedUri != null) {
+                    currentPath = croppedUri.getPath(); // Update current path to point to the cropped file
+                    iV.setImageURI(croppedUri);         // Display the cropped image
+                }
+            }
+        } else if (requestCode == UCrop.REQUEST_CROP && resultCode == UCrop.RESULT_ERROR) {
+            Throwable cropError = UCrop.getError(data_back);
+            Toast.makeText(requireActivity(), "Crop error: " + (cropError != null ? cropError.getMessage() : "Unknown"), Toast.LENGTH_LONG).show();
         }
     }
 

@@ -42,6 +42,8 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import com.yalantis.ucrop.UCrop;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -218,20 +220,43 @@ public class SignUpActivity extends Utilities {
     protected void onActivityResult(int requestCode, int resultCode,@Nullable Intent data_back) {
         super.onActivityResult(requestCode, resultCode, data_back);
         if (requestCode == REQUEST_IMAGE_CHOOSER && resultCode == RESULT_OK) {
-            imageUriToUpload = null;
+            Uri selectedUri = null;
             if (data_back != null && data_back.getData() != null) {
                 // Gallery selection was chosen. data_back will contain the Uri.
-                imageUriToUpload = data_back.getData();
+                selectedUri = data_back.getData();
             } else if (imageUri != null) {
                 // Camera was chosen. data_back is null, so we use the pre-saved Uri.
-                imageUriToUpload = imageUri;
+                selectedUri = imageUri;
             }
 
-            if (imageUriToUpload == null) {
+            if (selectedUri == null) {
                 Toast.makeText(this, "Failed to get image URI from chooser", Toast.LENGTH_LONG).show();
+            } else {
+                Uri destinationUri = Uri.fromFile(new File(getCacheDir(), "cropped_" + System.currentTimeMillis() + ".jpg"));
+                UCrop.Options options = new UCrop.Options();
+                options.setCircleDimmedLayer(true);
+                options.setShowCropGrid(false);
+                options.setShowCropFrame(false);
+                options.setToolbarColor(ContextCompat.getColor(this, android.R.color.white));
+                options.setStatusBarColor(ContextCompat.getColor(this, android.R.color.white));
+                options.setToolbarWidgetColor(ContextCompat.getColor(this, android.R.color.black));
+                options.setActiveControlsWidgetColor(ContextCompat.getColor(this, android.R.color.holo_blue_dark));
+                
+                UCrop.of(selectedUri, destinationUri)
+                        .withAspectRatio(1, 1)
+                        .withOptions(options)
+                        .start(SignUpActivity.this);
             }
-        } else if (resultCode == RESULT_CANCELED) {
+        } else if (resultCode == RESULT_CANCELED && requestCode == REQUEST_IMAGE_CHOOSER) {
             Toast.makeText(this,"Image selection/capture canceled",Toast.LENGTH_SHORT).show();
+        } else if (requestCode == UCrop.REQUEST_CROP && resultCode == RESULT_OK) {
+            if (data_back != null) {
+                imageUriToUpload = UCrop.getOutput(data_back);
+                Toast.makeText(this, "Profile picture cropped successfully", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == UCrop.REQUEST_CROP && resultCode == UCrop.RESULT_ERROR) {
+            Throwable cropError = UCrop.getError(data_back);
+            Toast.makeText(this, "Crop error: " + (cropError != null ? cropError.getMessage() : "Unknown"), Toast.LENGTH_LONG).show();
         }
     }
 

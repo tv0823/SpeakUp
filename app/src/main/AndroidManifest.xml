@@ -73,6 +73,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.SpeakUp.UCrop"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.speakup.fileprovider"
