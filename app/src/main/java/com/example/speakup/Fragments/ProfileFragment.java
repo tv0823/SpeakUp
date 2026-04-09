@@ -504,6 +504,7 @@ public class ProfileFragment extends Fragment {
     private void updateProfilePicture(Uri imageUri, ShapeableImageView mainProfileView, AlertDialog dialog) {
         ProgressDialog pD = new ProgressDialog(requireActivity());
         pD.setTitle("Uploading...");
+        pD.setCancelable(false);
         pD.show();
 
         StorageReference refFile = refST.child("User_Profiles/" + uid + ".jpg");

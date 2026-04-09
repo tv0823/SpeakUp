@@ -21,20 +21,16 @@
         android:layout_width="match_parent"
         android:layout_height="16dp" />
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="240dp"
-        android:layout_height="320dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="0dp">
-
-        <ImageView
-            android:id="@+id/ivProfile"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:src="@drawable/placeholder"
-            android:background="#F5EBDC" />
-    </androidx.cardview.widget.CardView>
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivProfile"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/placeholder"
+        android:background="#F5EBDC"
+        app:shapeAppearanceOverlay="@style/CircleImageView"
+        app:strokeWidth="2dp"
+        app:strokeColor="#dee4e8" />
 
     <Space
         android:layout_width="match_parent"
