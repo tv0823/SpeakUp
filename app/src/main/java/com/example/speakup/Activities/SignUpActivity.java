@@ -11,8 +11,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -69,6 +71,11 @@ public class SignUpActivity extends Utilities {
     private EditText eTPass;
 
     /**
+     * CheckBox to remember the user's login status.
+     */
+    private CheckBox checkBox;
+
+    /**
      * Request code for camera permission.
      */
     private static final int REQUEST_CAMERA_PERMISSION = 6709;
@@ -104,6 +111,7 @@ public class SignUpActivity extends Utilities {
         eTUsername = findViewById(R.id.eTUsername);
         eTEmail = findViewById(R.id.eTEmail);
         eTPass = findViewById(R.id.eTPass);
+        checkBox = findViewById(R.id.checkBox);
     }
 
     /**
@@ -301,11 +309,23 @@ public class SignUpActivity extends Utilities {
                                 //upload the user's profile picture to storage
                                 uploadImage(imageUriToUpload);
 
-                                refAuth.signOut();
+                                SharedPreferences settings = getSharedPreferences("STATUS", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = settings.edit();
+                                editor.putBoolean("stayConnected", checkBox.isChecked());
+                                editor.commit();
 
                                 Toast.makeText(SignUpActivity.this, "User created successfully", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(SignUpActivity.this, LogInActivity.class);
-                                startActivity(intent);
+
+                                if (checkBox.isChecked()) {
+                                    Intent intent = new Intent(SignUpActivity.this, MasterActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    refAuth.signOut();
+                                    Intent intent = new Intent(SignUpActivity.this, LogInActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                }
                             } else {
                                 Exception exp = task.getException();
 
