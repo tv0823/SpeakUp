@@ -8,6 +8,7 @@ import android.app.DatePickerDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -216,7 +217,7 @@ public class RemindersActivity extends AppCompatActivity {
                 new AlertDialog.Builder(RemindersActivity.this)
                         .setTitle("Delete Reminder")
                         .setMessage("Are you sure you want to delete this reminder?")
-                        .setPositiveButton("Yes", new android.content.DialogInterface.OnClickListener() {
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(android.content.DialogInterface dialog, int which) {
                                 cancelAlarm(requestCode);
