@@ -615,7 +615,7 @@ public class RecordingsGeneralFragment extends Fragment {
             return;
         }
 
-        refSimulations.addValueEventListener(new ValueEventListener() {
+        refSimulations.child(currentUserId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (pD != null && pD.isShowing())
@@ -624,7 +624,7 @@ public class RecordingsGeneralFragment extends Fragment {
 
                 for (DataSnapshot simSnapshot : snapshot.getChildren()) {
                     Simulation simulation = simSnapshot.getValue(Simulation.class);
-                    if (simulation != null && currentUserId.equals(simulation.getUserId())) {
+                    if (simulation != null) {
                         allSimulationsList.add(simulation);
                     }
                 }

@@ -1183,7 +1183,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
         sim.setOverAllScore(overallScore);
         sim.setRecordingsIds(recordingIds);
 
-        refSimulations.child(simulationId).setValue(sim)
+        refSimulations.child(userId).child(simulationId).setValue(sim)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {

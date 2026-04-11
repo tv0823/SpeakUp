@@ -417,7 +417,7 @@ public class QuickAccessFragment extends Fragment {
      * Fetches all simulation scores, sorts by date, and renders them as dots on a line.
      */
     private void fetchAndRenderChartSimulationsProgress() {
-        refSimulations.addListenerForSingleValueEvent(new ValueEventListener() {
+        refSimulations.child(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded() || lineChart == null) return;
@@ -425,7 +425,7 @@ public class QuickAccessFragment extends Fragment {
                 ArrayList<Simulation> sims = new ArrayList<>();
                 for (DataSnapshot simSnapshot : snapshot.getChildren()) {
                     Simulation sim = simSnapshot.getValue(Simulation.class);
-                    if (sim != null && currentUserId.equals(sim.getUserId()) && sim.getDateCompleted() != null) {
+                    if (sim != null && sim.getDateCompleted() != null) {
                         sims.add(sim);
                     }
                 }
