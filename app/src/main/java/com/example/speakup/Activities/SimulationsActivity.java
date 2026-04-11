@@ -957,24 +957,26 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
 
             categoryPrompts.append("\n--- Recording ").append(i + 1).append(" ---\n");
 
+            String basePrompt = "";
             switch (q.getCategory()) {
                 case "Personal Questions":
-                    categoryPrompts.append(Prompts.PERSONAL_PROMPT);
+                    basePrompt = Prompts.PERSONAL_PROMPT;
                     break;
                 case "Project Questions":
-                    categoryPrompts.append(Prompts.PROJECT_PROMPT);
+                    basePrompt = Prompts.PROJECT_PROMPT;
                     break;
                 case "Video Clip Questions":
-                    categoryPrompts.append(Prompts.VIDEO_CLIPS_PROMPT);
+                    basePrompt = Prompts.VIDEO_CLIPS_PROMPT;
                     break;
             }
 
-            categoryPrompts.append("\nQuestion: ").append(q.getFullQuestion());
+            String taskPrompt = basePrompt.replace("{QUESTION_TEXT}", q.getFullQuestion());
             if ("Video Clip Questions".equals(q.getCategory()) && q.getVideoUrl() != null
                     && !q.getVideoUrl().equals("null")) {
-                categoryPrompts.append("\nVideo URL: ").append(q.getVideoUrl());
+                taskPrompt = taskPrompt.replace("</input>",
+                        "<video_url>" + q.getVideoUrl() + "</video_url>\n</input>");
             }
-            categoryPrompts.append("\n");
+            categoryPrompts.append(taskPrompt).append("\n");
         }
 
         String finalPrompt = Prompts.SIMULATION_MASTER_PROMPT

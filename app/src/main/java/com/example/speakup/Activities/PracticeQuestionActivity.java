@@ -652,19 +652,19 @@ public class PracticeQuestionActivity extends Utilities {
                             pD.setCancelable(false);
                             pD.show();
 
-                            String prompt = "";
+                            String basePrompt = "";
                             switch (question.getCategory()) {
                                 case "Personal Questions":
-                                    prompt = PERSONAL_PROMPT;
+                                    basePrompt = PERSONAL_PROMPT;
                                     break;
-                                case "Project Presentation":
-                                    prompt = PROJECT_PROMPT;
+                                case "Project Questions":
+                                    basePrompt = PROJECT_PROMPT;
                                     break;
                                 case "Video Clip Questions":
-                                    prompt = VIDEO_CLIPS_PROMPT;
+                                    basePrompt = VIDEO_CLIPS_PROMPT;
                                     break;
                             }
-                            prompt += question.getFullQuestion();
+                            String prompt = basePrompt.replace("{QUESTION_TEXT}", question.getFullQuestion());
 
                             GeminiManager.getInstance().sendTextWithFilePrompt(prompt, bytes, "audio/aac",
                                     new GeminiCallback() {
@@ -701,6 +701,7 @@ public class PracticeQuestionActivity extends Utilities {
      */
     private void createRecordingToFirebase(String json) {
         Map<String, TopicDetail> aiFeedBack = new HashMap<>();
+        Log.e("JSON", "JSON: " + json);
         try {
             String cleanedJson = json.replaceAll("```json", "").replaceAll("```", "").trim();
             JSONObject root = new JSONObject(cleanedJson);
