@@ -213,11 +213,21 @@ public class RemindersActivity extends AppCompatActivity {
         btnDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cancelAlarm(requestCode);
-                removeFromStorage(requestCode);
-                reminderContainer.removeView(rowView);
-                cleanUpHeader(category);
-                Toast.makeText(RemindersActivity.this, "Reminder Deleted", Toast.LENGTH_SHORT).show();
+                new AlertDialog.Builder(RemindersActivity.this)
+                        .setTitle("Delete Reminder")
+                        .setMessage("Are you sure you want to delete this reminder?")
+                        .setPositiveButton("Yes", new android.content.DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(android.content.DialogInterface dialog, int which) {
+                                cancelAlarm(requestCode);
+                                removeFromStorage(requestCode);
+                                reminderContainer.removeView(rowView);
+                                cleanUpHeader(category);
+                                Toast.makeText(RemindersActivity.this, "Reminder Deleted", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
             }
         });
 
