@@ -315,6 +315,7 @@ public class SignUpActivity extends Utilities {
             ProgressDialog pd = new ProgressDialog(this);
             pd.setTitle("Connecting");
             pd.setMessage("Creating user...");
+            pd.setCancelable(false);
             pd.show();
 
             refAuth.createUserWithEmailAndPassword(email, pass)

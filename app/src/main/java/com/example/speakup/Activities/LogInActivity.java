@@ -107,6 +107,7 @@ public class LogInActivity extends Utilities {
             ProgressDialog pd = new ProgressDialog(this);
             pd.setTitle("Connecting");
             pd.setMessage("Logging in user...");
+            pd.setCancelable(false);
             pd.show();
 
             refAuth.signInWithEmailAndPassword(email, pass)
