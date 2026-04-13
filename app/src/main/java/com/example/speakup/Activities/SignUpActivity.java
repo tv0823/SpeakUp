@@ -5,9 +5,11 @@ import static com.example.speakup.Utils.FBRef.refUserProfiles;
 import static com.example.speakup.Utils.FBRef.refUsers;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.provider.Settings;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -136,18 +138,6 @@ public class SignUpActivity extends Utilities {
     }
 
     /**
-     * Called when the activity will start interacting with the user.
-     * Checks for camera permissions and requests them if not granted.
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-        }
-    }
-
-    /**
      * Callback for the result from requesting permissions.
      * Handles the response to the camera permission request.
      *
@@ -161,26 +151,58 @@ public class SignUpActivity extends Utilities {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchImageChooser();
+            } else if (!ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.CAMERA)) {
+                new android.app.AlertDialog.Builder(this)
+                        .setTitle("Permission Required")
+                        .setMessage("Camera access was permanently denied. Please enable it in Settings, or you can still select a photo from the gallery.")
+                        .setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.fromParts("package", getPackageName(), null));
+                                startActivity(intent);
+                            }
+                        })
+                        .setNegativeButton("Use Gallery", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                launchGalleryOnly();
+                            }
+                        })
+                        .show();
+            } else {
+                Toast.makeText(this, "Camera permission denied. You can still select from gallery.", Toast.LENGTH_SHORT).show();
+                launchGalleryOnly();
             }
         }
     }
 
     /**
      * Initiates the process to upload a profile picture.
-     * Opens a chooser dialog to allow the user to select an image from the gallery or take a new photo with the camera.
+     * Checks camera permission first; if not granted, requests it.
      *
      * @param view The view that was clicked.
      */
     public void uploadPfp(View view) {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            return;
+        }
+        launchImageChooser();
+    }
+
+    /**
+     * Opens a chooser with both camera and gallery options.
+     */
+    private void launchImageChooser() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        File photoFile = null;
 
         try {
             String filename = "img_" + System.currentTimeMillis();
             File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-            photoFile = File.createTempFile(filename,".jpg", storageDir);
+            File photoFile = File.createTempFile(filename, ".jpg", storageDir);
 
             imageUri = FileProvider.getUriForFile(
                     this,
@@ -189,8 +211,7 @@ public class SignUpActivity extends Utilities {
             );
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
         } catch (IOException e) {
-            Toast.makeText(this,"Failed to create temporary file for camera",Toast.LENGTH_LONG).show();
-            // If file creation fails, set imageUri to null so the camera intent is not added to the intent chooser.
+            Toast.makeText(this, "Failed to create temporary file for camera", Toast.LENGTH_LONG).show();
             imageUri = null;
         }
 
@@ -199,12 +220,21 @@ public class SignUpActivity extends Utilities {
         galleryIntent.setType("image/*");
         Intent chooserIntent = Intent.createChooser(galleryIntent, "Select Image Source");
 
-        // Only add the camera intent if the photoFile and URI were successfully prepared
         if (imageUri != null) {
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] {cameraIntent});
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
         }
 
         startActivityForResult(chooserIntent, REQUEST_IMAGE_CHOOSER);
+    }
+
+    /**
+     * Opens gallery only (used when camera permission is denied).
+     */
+    private void launchGalleryOnly() {
+        Intent galleryIntent = new Intent(Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        galleryIntent.setType("image/*");
+        startActivityForResult(galleryIntent, REQUEST_IMAGE_CHOOSER);
     }
 
     /**

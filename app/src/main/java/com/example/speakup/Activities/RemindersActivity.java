@@ -13,8 +13,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -27,6 +29,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -85,9 +88,29 @@ public class RemindersActivity extends AppCompatActivity {
         btnNewReminder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!hasNotificationPermission()) {
+                    Toast.makeText(RemindersActivity.this,
+                            "Notification permission is required to set reminders.", Toast.LENGTH_LONG).show();
+                    checkNotificationPermission();
+                    return;
+                }
                 showNewReminderDialog();
             }
         });
+    }
+
+    /**
+     * Returns true if the app has notification permission, or if the permission is not
+     * required on this API level (below Android 13).
+     *
+     * @return {@code true} if notifications are permitted or not required; {@code false} otherwise.
+     */
+    private boolean hasNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        }
+        return true;
     }
 
     /**
@@ -101,6 +124,41 @@ public class RemindersActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.POST_NOTIFICATIONS},
                         NOTIFICATION_PERMISSION_CODE);
+            }
+        }
+    }
+
+    /**
+     * Handles the result of the notification permission request.
+     *
+     * @param requestCode  The request code passed to {@link #checkNotificationPermission()}.
+     * @param permissions  The requested permissions.
+     * @param grantResults The grant results; {@link PackageManager#PERMISSION_GRANTED} or
+     *                     {@link PackageManager#PERMISSION_DENIED} for each permission.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Notification permission granted. You can now create reminders.", Toast.LENGTH_SHORT).show();
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.POST_NOTIFICATIONS)) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Permission Required")
+                        .setMessage("Notification access was permanently denied. Please enable it in Settings to use reminders.")
+                        .setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.fromParts("package", getPackageName(), null));
+                                startActivity(intent);
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            } else {
+                Toast.makeText(this, "Notification permission denied. Reminders will not work.", Toast.LENGTH_LONG).show();
             }
         }
     }

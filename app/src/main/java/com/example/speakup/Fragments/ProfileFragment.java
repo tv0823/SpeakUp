@@ -9,9 +9,11 @@ import static com.example.speakup.Utils.FBRef.refUsers;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -20,7 +22,6 @@ import android.os.Bundle;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -368,17 +369,6 @@ public class ProfileFragment extends Fragment {
     }
 
     /**
-     * Checks for camera permissions when the fragment is resumed.
-     */
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (ContextCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-        }
-    }
-
-    /**
      * Callback for the result from requesting permissions.
      *
      * @param requestCode  The request code.
@@ -389,20 +379,54 @@ public class ProfileFragment extends Fragment {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                Toast.makeText(requireActivity(), "Camera permission denied", Toast.LENGTH_SHORT).show();
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchImageChooserInternal();
+            } else if (!shouldShowRequestPermissionRationale(android.Manifest.permission.CAMERA)) {
+                new AlertDialog.Builder(requireActivity())
+                        .setTitle("Permission Required")
+                        .setMessage("Camera access was permanently denied. Please enable it in Settings, or you can still select a photo from the gallery.")
+                        .setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.fromParts("package", requireActivity().getPackageName(), null));
+                                startActivity(intent);
+                            }
+                        })
+                        .setNegativeButton("Use Gallery", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                launchGalleryOnly();
+                            }
+                        })
+                        .show();
+            } else {
+                Toast.makeText(requireActivity(), "Camera permission denied. You can still select from gallery.", Toast.LENGTH_SHORT).show();
+                launchGalleryOnly();
             }
         }
     }
 
     /**
-     * Initiates the process of capturing a photo with the camera or selecting one from the gallery.
+     * Checks camera permission before initiating photo selection.
+     * Requests permission if not yet granted.
      */
     private void getPhoto() {
+        if (ContextCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            return;
+        }
+        launchImageChooserInternal();
+    }
+
+    /**
+     * Opens a chooser with both camera and gallery options.
+     */
+    private void launchImageChooserInternal() {
         String filename = "tempfile";
         File storageDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         Uri imageUri;
-        Intent takePhotoIntent = null;
+        Intent takePhotoIntent;
 
         try {
             File imgFile = File.createTempFile(filename, ".jpg", storageDir);
@@ -424,19 +448,27 @@ public class ProfileFragment extends Fragment {
         galleryIntent.setAction(Intent.ACTION_PICK);
         galleryIntent.setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
-        Intent chooserIntent = Intent.createChooser(
-                galleryIntent,
-                "Select Source"
-        );
-
-        if (takePhotoIntent != null) {
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{takePhotoIntent});
-        }
+        Intent chooserIntent = Intent.createChooser(galleryIntent, "Select Source");
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{takePhotoIntent});
 
         if (chooserIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
             startActivityForResult(chooserIntent, REQUEST_IMAGE_CHOOSER);
         } else {
             Toast.makeText(requireActivity(), "No compatible application found.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * Opens gallery only (used when camera permission is denied).
+     */
+    private void launchGalleryOnly() {
+        Intent galleryIntent = new Intent();
+        galleryIntent.setAction(Intent.ACTION_PICK);
+        galleryIntent.setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        if (galleryIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
+            startActivityForResult(galleryIntent, REQUEST_IMAGE_CHOOSER);
+        } else {
+            Toast.makeText(requireActivity(), "No gallery app found.", Toast.LENGTH_SHORT).show();
         }
     }
 

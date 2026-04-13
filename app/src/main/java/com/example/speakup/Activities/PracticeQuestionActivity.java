@@ -13,6 +13,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -303,6 +304,12 @@ public class PracticeQuestionActivity extends Utilities {
      * @param view The clicked view
      */
     public void recordBtn(View view) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Microphone permission is required to record.", Toast.LENGTH_SHORT).show();
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+            return;
+        }
+
         if (recordingManager.isFinalized()) {
             Toast.makeText(this, "Recording finished. Delete to restart.", Toast.LENGTH_SHORT).show();
             return;
@@ -575,6 +582,41 @@ public class PracticeQuestionActivity extends Utilities {
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.RECORD_AUDIO },
                     REQUEST_RECORD_AUDIO_PERMISSION);
+        }
+    }
+
+    /**
+     * Handles the result of the microphone permission request.
+     * If permanently denied, prompts the user to open the app's Settings page.
+     *
+     * @param requestCode  The request code passed to {@link #checkPermissions()}.
+     * @param permissions  The requested permissions.
+     * @param grantResults The grant results; {@link PackageManager#PERMISSION_GRANTED} or
+     *                     {@link PackageManager#PERMISSION_DENIED} for each permission.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Permission Required")
+                            .setMessage("Microphone access was permanently denied. Please enable it in Settings to record audio.")
+                            .setPositiveButton("Open Settings", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                    intent.setData(Uri.fromParts("package", getPackageName(), null));
+                                    startActivity(intent);
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                } else {
+                    Toast.makeText(this, "Microphone permission denied.", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 
