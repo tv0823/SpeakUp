@@ -53,7 +53,7 @@ public class MasterActivity extends Utilities {
         bottomNav.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                // 1. Debouncing is good, but let's keep it tight (250-300ms)
+                // 1. Debouncing
                 if (SystemClock.elapsedRealtime() - lastClickTime < 300) {
                     return false;
                 }
