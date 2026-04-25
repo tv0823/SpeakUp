@@ -1218,7 +1218,7 @@ public class SimulationsActivity extends Utilities implements View.OnClickListen
      * @return A formatted string (e.g. "Simulation 06/04/2026 17:00").
      */
     private String buildSimulationSessionLabel(Date simulationDate) {
-        SimpleDateFormat sdf = new SimpleDateFormat("Simulation dd/MM/yyyy HH:mm", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("'Simulation' dd/MM/yyyy HH:mm", Locale.getDefault());
         return sdf.format(simulationDate);
     }
 
