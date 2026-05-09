@@ -483,6 +483,11 @@ public class ProfileFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data_back) {
         super.onActivityResult(requestCode, resultCode, data_back);
 
+        if (requestCode == REQUEST_IMAGE_CHOOSER && resultCode != Activity.RESULT_OK) {
+            currentPath = null;
+            return;
+        }
+
         if (requestCode == REQUEST_IMAGE_CHOOSER && resultCode == Activity.RESULT_OK) {
             Uri selectedUri = null;
             if (data_back != null && data_back.getData() != null) {
@@ -520,7 +525,10 @@ public class ProfileFragment extends Fragment {
                     iV.setImageURI(croppedUri);         // Display the cropped image
                 }
             }
+        } else if (requestCode == UCrop.REQUEST_CROP && resultCode == Activity.RESULT_CANCELED) {
+            currentPath = null;
         } else if (requestCode == UCrop.REQUEST_CROP && resultCode == UCrop.RESULT_ERROR) {
+            currentPath = null;
             Throwable cropError = UCrop.getError(data_back);
             Toast.makeText(requireActivity(), "Crop error: " + (cropError != null ? cropError.getMessage() : "Unknown"), Toast.LENGTH_LONG).show();
         }

@@ -256,7 +256,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Guiding Teacher: Albert Levi\nThank you for supporting me and helping me create this wonderfull app"
+                    android:text="Guiding Teacher: Albert Levy\nThank you for supporting me and helping me create this wonderfull app"
                     android:textColor="#333333"
                     android:textSize="14sp"
                     android:textStyle="bold" />
